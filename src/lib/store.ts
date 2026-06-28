@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { cookies } from "next/headers";
 import type {
   AppUser,
   Department,
@@ -190,29 +191,13 @@ export async function getUsers(): Promise<AppUser[]> {
   }));
 }
 
-export async function getCurrentUser(): Promise<AppUser> {
-  const u = await prisma.user.findUnique({ where: { id: CURRENT_USER_ID } });
-  if (!u) {
-    // Fail-safe initialization for the current user
-    const newUser = await prisma.user.create({
-      data: {
-        id: CURRENT_USER_ID,
-        phone: "+919876543210",
-        name: "You",
-        trustScore: 72,
-        band: "Champion",
-        homeLat: 19.1197,
-        homeLng: 72.8468,
-      },
-    });
-    return {
-      id: newUser.id,
-      name: newUser.name,
-      trustScore: newUser.trustScore,
-      band: newUser.band as any,
-      home: { lat: newUser.homeLat, lng: newUser.homeLng },
-    };
-  }
+export async function getCurrentUserOrNull(): Promise<AppUser | null> {
+  const sessionId = cookies().get("civicpulse_session")?.value;
+  if (!sessionId) return null;
+
+  const u = await prisma.user.findUnique({ where: { id: sessionId } });
+  if (!u) return null;
+
   return {
     id: u.id,
     name: u.name,
@@ -220,6 +205,14 @@ export async function getCurrentUser(): Promise<AppUser> {
     band: u.band as any,
     home: { lat: u.homeLat, lng: u.homeLng },
   };
+}
+
+export async function getCurrentUser(): Promise<AppUser> {
+  const user = await getCurrentUserOrNull();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+  return user;
 }
 
 export interface ReportFilter {

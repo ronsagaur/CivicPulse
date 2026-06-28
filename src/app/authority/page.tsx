@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ClipboardCheck,
   Play,
@@ -9,6 +10,7 @@ import {
   Clock,
   Hourglass,
   Building2,
+  LogOut,
 } from "lucide-react";
 import { api, usePolling } from "@/lib/client";
 import { CATEGORY_META, type Report } from "@/lib/types";
@@ -26,9 +28,15 @@ const AUTHORITY_STATES = new Set<Report["status"]>([
 ]);
 
 export default function AuthorityDashboard() {
+  const router = useRouter();
   const { data, refresh } = usePolling<{ reports: Report[] }>("/api/reports", 2000);
   const { data: analytics } = usePolling<AnalyticsSummary>("/api/analytics", 4000);
   const [busy, setBusy] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  };
 
   const reports = (data?.reports ?? []).filter((r) => AUTHORITY_STATES.has(r.status));
 
@@ -80,9 +88,14 @@ export default function AuthorityDashboard() {
             </div>
           </div>
         </div>
-        <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-200">
-          🔔 {slaRisk} need attention today
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-200">
+            🔔 {slaRisk} need attention today
+          </span>
+          <button onClick={handleLogout} className="btn-ghost !px-3" title="Log out">
+            <LogOut size={16} className="text-slate-500" />
+          </button>
+        </div>
       </div>
 
       {/* Stat cards */}

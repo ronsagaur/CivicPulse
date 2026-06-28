@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { Plus, Flame, ShieldCheck, X, ArrowRight, MessageSquare, Send, Sparkles, Trophy, Award } from "lucide-react";
+import { Plus, Flame, ShieldCheck, X, ArrowRight, MessageSquare, Send, Sparkles, Trophy, Award, LogOut } from "lucide-react";
 import MapView from "@/components/MapView";
 import ReportCard from "@/components/ReportCard";
 import { Stat, TrustBadge, CategoryChip, SeverityDots } from "@/components/ui";
@@ -13,6 +14,7 @@ import type { AnalyticsSummary } from "@/lib/analytics";
 const WARD_CENTER = { lat: 19.1197, lng: 72.8468 };
 
 export default function CitizenHome() {
+  const router = useRouter();
   const { data: reportData, refresh } = usePolling<{ reports: Report[] }>(
     "/api/reports",
     2500
@@ -32,6 +34,11 @@ export default function CitizenHome() {
   useEffect(() => {
     fetchMeta();
   }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  };
 
   const reports = reportData?.reports ?? [];
   const needVerify = reports.filter((r) => r.status === "PENDING_VERIFICATION");
@@ -69,6 +76,9 @@ export default function CitizenHome() {
           <Link href="/report/new" className="btn-primary">
             <Plus size={16} /> Report an issue
           </Link>
+          <button onClick={handleLogout} className="btn-ghost !px-3" title="Log out">
+            <LogOut size={16} className="text-slate-500" />
+          </button>
         </div>
       </div>
 
@@ -132,7 +142,7 @@ export default function CitizenHome() {
                 <Flame size={13} /> Heatmap {heat ? "ON" : "OFF"}
               </button>
             </div>
-            <MapView reports={reports} center={WARD_CENTER} heat={heat} height={420} />
+            <MapView reports={reports} center={me ? me.home : WARD_CENTER} heat={heat} height={420} />
           </div>
 
           {/* Recent reports */}
