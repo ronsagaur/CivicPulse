@@ -14,14 +14,14 @@ export default function ReportCard({ report }: { report: Report }) {
       className="card card-hover group flex min-w-0 h-24 sm:h-[104px] gap-3 overflow-hidden p-3"
     >
       <div
-        className={`relative grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${report.imagePlaceholder} shadow-inner sm:h-20 sm:w-20`}
+        className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br ${report.imagePlaceholder} shadow-inner sm:h-20 sm:w-20`}
       >
         <Image
           src={meta.iconPath}
           alt={meta.label}
-          width={56}
-          height={56}
-          className="object-contain drop-shadow-[0_4px_6px_rgba(30,27,24,0.15)] transition-transform duration-300 group-hover:scale-110"
+          fill
+          sizes="(max-width: 640px) 64px, 80px"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
           priority={true}
         />
         {report.mediaType === "video" && (
