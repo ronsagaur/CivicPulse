@@ -9,9 +9,11 @@ export async function askChatbot(userMessage: string): Promise<string> {
     return "🤖 **CivicPulse Agent Offline**\n\nPlease set the `GEMINI_API_KEY` environment variable in your `.env` file to enable the conversational assistant.";
   }
 
+  // Define reports summary in outer scope so it's accessible in catch block
+  let reports: any[] = [];
   try {
     // Retrieve fresh context from SQLite/PostgreSQL
-    const reports = await prisma.report.findMany({
+    reports = await prisma.report.findMany({
       take: 20,
       orderBy: { createdAt: "desc" },
       include: {
@@ -87,7 +89,50 @@ ${reportsSummary || "No active reports currently."}
 
     return result.response.text();
   } catch (err) {
-    console.error("[CivicPulse Chatbot] Error generating response:", err);
-    return "🤖 *Sorry, I am having trouble fetching the database records right now. Please try again in a moment.*";
+    console.error("[CivicPulse Chatbot] Error generating response, using SQL RAG fallback:", err);
+    
+    // Attempt local database lookup fallback if database connection works
+    try {
+      if (reports.length === 0) {
+        reports = await prisma.report.findMany({
+          take: 10,
+          orderBy: { createdAt: "desc" },
+        });
+      }
+
+      const query = userMessage.toLowerCase();
+      
+      // 1. Specific Report ID Lookup
+      const matchedId = userMessage.match(/CP-\d+/i)?.[0]?.toUpperCase();
+      if (matchedId) {
+        const rep = reports.find(r => r.id === matchedId);
+        if (rep) {
+          return `🤖 **CivicPulse Agent (Database Fallback)**\n\nI found report **${rep.id}** (${rep.title}) in Andheri West:\n- **Status**: ${rep.status.replace(/_/g, " ")}\n- **Location**: ${rep.addressText}\n- **Severity**: ${rep.severity}/5\n- **Details**: ${rep.description || "No further details provided."}\n\n*(Note: Running in database fallback mode due to Gemini quota limits).*`;
+        }
+      }
+
+      // 2. Category Keyword Match - Potholes
+      if (query.includes("pothole") || query.includes("road") || query.includes("hole")) {
+        const potholes = reports.filter(r => r.category === "POTHOLE" || r.title.toLowerCase().includes("pothole"));
+        if (potholes.length > 0) {
+          return `🤖 **CivicPulse Agent (Database Fallback)**\n\nHere are the active **Pothole** issues currently listed:\n\n${potholes.map(p => `- **${p.id}**: ${p.title} at ${p.addressText} (${p.status.replace(/_/g, " ")})`).join("\n")}`;
+        }
+      }
+
+      // 3. Category Keyword Match - Sewage / Water
+      if (query.includes("sewer") || query.includes("water") || query.includes("leak") || query.includes("sewage")) {
+        const leaks = reports.filter(r => r.category === "WATER_LEAK" || r.category === "SEWAGE" || r.title.toLowerCase().includes("leak") || r.title.toLowerCase().includes("sew"));
+        if (leaks.length > 0) {
+          return `🤖 **CivicPulse Agent (Database Fallback)**\n\nHere are the active **Sewage & Water Leak** issues currently listed:\n\n${leaks.map(l => `- **${l.id}**: ${l.title} at ${l.addressText} (${l.status.replace(/_/g, " ")})`).join("\n")}`;
+        }
+      }
+
+      // 4. Default Greeting / Help
+      const openCount = reports.filter(r => r.status !== "CLOSED_VERIFIED" && r.status !== "REJECTED").length;
+      return `🤖 **CivicPulse Agent (Database Fallback)**\n\nHello! I am your AI Ward Assistant. My Gemini API key is currently experiencing rate-limiting/quota constraints (429), but I have read Andheri West's database directly:\n\n- **Active Ward Issues**: ${openCount} open reports.\n- **Latest Reports**:\n${reports.slice(0, 3).map(r => `  * **${r.id}**: ${r.title} (${r.status.replace(/_/g, " ")})`).join("\n")}\n\nYou can report new issues at the top of the page, or verify open neighbor alerts!`;
+    } catch (dbErr) {
+      console.error("[CivicPulse Chatbot] DB Fallback failed:", dbErr);
+      return "🤖 *Sorry, I am having trouble fetching the database records right now. Please check your database connection.*";
+    }
   }
 }
