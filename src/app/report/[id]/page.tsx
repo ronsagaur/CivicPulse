@@ -114,7 +114,14 @@ export default function ReportDetail() {
             </span>
           </div>
         )}
-        <div className="p-4">
+        <div className="p-4 relative overflow-hidden">
+          {r.upvoteCount >= 5 && (
+            <div className="absolute right-4 bottom-2 w-24 h-24 border-4 border-dashed border-emerald-600/15 rounded-full flex items-center justify-center rotate-[-15deg] select-none pointer-events-none">
+              <div className="text-center font-extrabold text-[9px] uppercase tracking-widest text-emerald-600/15 leading-tight p-1.5 border border-emerald-600/15 rounded-full">
+                Verified<br />Consensus
+              </div>
+            </div>
+          )}
           <h1 className="text-lg font-extrabold">{r.title}</h1>
           <p className="mt-1 text-sm text-slate-500">{r.description}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">

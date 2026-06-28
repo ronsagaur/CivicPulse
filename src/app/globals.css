@@ -9,14 +9,21 @@
   --font-serif: 'Playfair Display', Georgia, serif;
 }
 
-html,
-body {
-  background:
-    radial-gradient(1200px 600px at 85% -10%, #fef3c7 0%, transparent 50%),
-    radial-gradient(1000px 500px at -10% 10%, #fdf6e2 0%, transparent 45%),
-    #faf8f5;
-  color: #1e1b18;
+html {
+  background-color: #faf8f5;
   -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: #faf8f5;
+  background-image: 
+    /* Terracotta bleed */
+    radial-gradient(circle at 90% 10%, rgba(194, 89, 63, 0.04) 0%, transparent 40%),
+    /* Marigold bleed */
+    radial-gradient(circle at 10% 90%, rgba(245, 158, 11, 0.03) 0%, transparent 40%),
+    /* Subtle geometric grid pattern */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M60 0H0v60h60V0z' fill='none'/%3E%3Cpath d='M60 60H0V0h60v60z' fill='none'/%3E%3Cpath d='M0 0h60v1H0z' fill='%231e1b18' fill-opacity='.015'/%3E%3Cpath d='M0 0v60h1V0z' fill='%231e1b18' fill-opacity='.015'/%3E%3C/svg%3E");
+  color: #1e1b18;
 }
 
 /* Leaflet tweaks */
@@ -29,11 +36,24 @@ body {
 }
 
 .card {
-  @apply rounded-2xl border border-orange-100 bg-white/95 shadow-sm backdrop-blur transition duration-300;
+  border-radius: 1rem;
+  border-width: 1px;
+  border-color: rgb(254 215 170 / 0.5); /* border-orange-100/50 */
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+  box-shadow: 0 10px 30px -10px rgba(30, 27, 24, 0.04), 0 1px 3px 0 rgba(30, 27, 24, 0.02);
 }
 
 .card-hover {
-  @apply hover:-translate-y-0.5 hover:shadow-md hover:border-brand-200/60;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1), border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(194, 89, 63, 0.25); /* brand-200/60 (terracotta) */
+  box-shadow: 0 15px 35px -8px rgba(30, 27, 24, 0.07), 0 2px 5px 0 rgba(30, 27, 24, 0.03);
 }
 
 .font-serif-header {

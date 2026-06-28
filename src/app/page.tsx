@@ -104,9 +104,9 @@ export default function CitizenHome() {
       </div>
 
       {/* Dashboard Grid */}
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-3">
         {/* Main Content Area (Left 2 Columns) */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-8">
           {/* Verify prompt — the demo driver */}
           {needVerify.length > 0 && (
             <VerifyPrompt reports={needVerify} onChange={() => { refresh(); fetchMeta(); }} />
@@ -114,7 +114,7 @@ export default function CitizenHome() {
 
           {/* Map */}
           <div className="card overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-dashed border-orange-100/60">
               <div className="flex items-center gap-3 text-sm">
                 <Legend color="#ef4444" label="Open" />
                 <Legend color="#f59e0b" label="In progress" />
@@ -157,7 +157,7 @@ export default function CitizenHome() {
         </div>
 
         {/* Sidebar Widgets (Right 1 Column) */}
-        <div className="space-y-5">
+        <div className="space-y-8">
           {/* Citizen Profile Card */}
           <div className="card p-4 bg-gradient-to-br from-white to-slate-50/50">
             <div className="flex items-center justify-between">
@@ -311,7 +311,7 @@ function VerifyPrompt({
   }
 
   return (
-    <div className="card relative overflow-hidden border-brand-200 bg-gradient-to-br from-brand-50 to-white p-4">
+    <div className="card relative overflow-hidden border-dashed border-brand-300 bg-gradient-to-br from-brand-50/50 to-white p-4">
       {justVerified && <ConfettiShower />}
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-600 text-white">
