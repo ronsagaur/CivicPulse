@@ -59,7 +59,7 @@ export default function AgentControlCenter() {
           </div>
           <h2 className="mt-3 text-sm font-bold text-slate-800">Intake & Verification Agent</h2>
           <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-            Powered by **Gemini 2.0 Flash**. Analyzes visual uploads, checks metadata, flags duplicate claims, and assigns severity.
+            Powered by **Gemini 2.5 Flash**. Analyzes visual uploads, checks metadata, flags duplicate claims, and assigns severity.
           </p>
         </div>
 

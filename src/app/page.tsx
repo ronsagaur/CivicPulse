@@ -430,7 +430,7 @@ function ChatbotWidget() {
       <div className="flex items-center gap-1.5 px-4 py-3 bg-brand-100/30 border-b border-brand-200/40 shrink-0">
         <MessageSquare className="text-brand-600" size={16} />
         <span className="text-xs font-bold text-slate-700">AI Ward Assistant</span>
-        <span className="ml-auto chip bg-brand-50 text-brand-600 ring-brand-100 text-[9px] py-0">Gemini 2.0</span>
+        <span className="ml-auto chip bg-brand-50 text-brand-600 ring-brand-100 text-[9px] py-0">Gemini 2.5</span>
       </div>
 
       {/* Messages */}
