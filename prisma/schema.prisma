@@ -1,0 +1,107 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  phone              String   @unique
+  name               String
+  trustScore         Int      @default(50)
+  band               String   @default("Trusted") // "New" | "Trusted" | "Champion"
+  homeLat            Float
+  homeLng            Float
+  language           String   @default("en")
+  isAnonymousDefault Boolean  @default(false)
+  createdAt          DateTime @default(now())
+}
+
+model Report {
+  id                    String                   @id
+  reporterId            String
+  reporterName          String
+  isAnonymous           Boolean                  @default(false)
+  title                 String
+  description           String
+  category              String // IssueCategory enum string
+  severity              Int                      @default(1)
+  status                String                   @default("PENDING_AI") // ReportStatus enum string
+  lat                   Float
+  lng                   Float
+  addressText           String
+  wardId                String
+  aiConfidence          Float                    @default(0)
+  aiMetadata            String?                  // JSON serialized AiMetadata
+  imagePlaceholder      String
+  mediaType             String                   @default("image") // "image" | "video"
+  mediaUrl              String?                  // Stores base64 data URL for uploaded files
+  parentReportId        String?
+  duplicateCount        Int                      @default(0)
+  upvoteCount           Int                      @default(0)
+  confirmCount          Int                      @default(0)
+  routedToDepartmentId  String?
+  slaDeadline           DateTime?
+  escalationLevel       Int                      @default(0)
+  createdAt             DateTime                 @default(now())
+  resolvedAt            DateTime?
+  closedAt              DateTime?
+  events                ReportEvent[]
+  verifications         Verification[]
+  resolutionConfirmations ResolutionConfirmation[]
+}
+
+model ReportEvent {
+  id        String   @id @default(uuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  type      String
+  actorType String   // "USER" | "AUTHORITY" | "SYSTEM"
+  actorName String?
+  label     String
+  at        DateTime @default(now())
+}
+
+model Verification {
+  id           String   @id @default(uuid())
+  reportId     String
+  report       Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  verifierId   String
+  verifierName String
+  verdict      String   // "CONFIRM" | "REJECT" | "ALREADY_FIXED"
+  trustAtTime  Int
+  at           DateTime @default(now())
+}
+
+model ResolutionConfirmation {
+  id            String   @id @default(uuid())
+  reportId      String
+  report        Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  confirmerId   String
+  confirmerName String
+  verdict       String   // "FIXED" | "STILL_BROKEN" | "PARTIALLY_FIXED"
+  at            DateTime @default(now())
+}
+
+model Ward {
+  id         String @id
+  name       String
+  city       String
+  state      String
+  centerLat  Float
+  centerLng  Float
+  population Int
+}
+
+model Department {
+  id                       String  @id
+  name                     String
+  shortName                String
+  wardId                   String
+  handlesCategories        String  // Comma separated enums (e.g. "POTHOLE,GARBAGE")
+  defaultSlaHours          Int
+  escalationToDepartmentId String?
+}
