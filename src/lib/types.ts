@@ -166,6 +166,6 @@ export interface AppUser {
   id: string;
   name: string;
   trustScore: number;
-  band: "New" | "Trusted" | "Champion";
+  band: "Citizen" | "Volunteer" | "Guardian" | "Champion" | "Ward Keeper" | "City Steward" | "Nation Builder";
   home: GeoPoint;
 }

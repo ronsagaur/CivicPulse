@@ -34,8 +34,8 @@ export async function POST(req: Request) {
             name,
             homeLat,
             homeLng,
-            trustScore: 50,
-            band: "New",
+            trustScore: 10,
+            band: "Citizen",
           },
         });
       } else if (user.homeLat !== homeLat || user.homeLng !== homeLng) {

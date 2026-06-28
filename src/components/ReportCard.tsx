@@ -11,50 +11,55 @@ export default function ReportCard({ report }: { report: Report }) {
   return (
     <Link
       href={`/report/${report.id}`}
-      className="card card-hover group flex min-w-0 h-24 sm:h-[104px] gap-3 overflow-hidden p-3"
+      className="card card-hover group flex flex-col min-w-0 overflow-hidden bg-white"
     >
-      <div
-        className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br ${report.imagePlaceholder} shadow-inner sm:h-20 sm:w-20`}
-      >
+      {/* Full bleed diorama header */}
+      <div className={`relative h-56 w-full shrink-0 overflow-hidden bg-gradient-to-br ${report.imagePlaceholder} border-b border-dashed border-slate-200/60`}>
         <Image
           src={meta.iconPath}
           alt={meta.label}
           fill
-          sizes="(max-width: 640px) 64px, 80px"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          sizes="(max-width: 640px) 100vw, 400px"
+          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           priority={true}
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/5 pointer-events-none" />
+        
+        {/* Layered badges over diorama */}
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <StatusBadge status={report.status} />
+        </div>
+        <div className="absolute top-3 right-3">
+          <SeverityDots value={report.severity} />
+        </div>
+        
         {report.mediaType === "video" && (
-          <span className="absolute bottom-1 right-1 p-0.5 bg-slate-950/75 rounded text-white text-[9px] leading-none select-none scale-90 origin-bottom-right shadow-sm border border-white/10">
-            📹
+          <span className="absolute bottom-3 right-3 p-1.5 bg-slate-950/75 rounded-md text-white text-[10px] uppercase font-bold tracking-widest leading-none shadow-sm backdrop-blur-sm">
+            Video attached
           </span>
         )}
       </div>
-      <div className="min-w-0 flex-1 flex flex-col justify-between py-0.5">
-        <div>
-          <div className="flex min-w-0 items-start justify-between gap-2">
-            <h3 className="truncate text-sm font-bold text-slate-800 group-hover:text-brand-600 transition">
-              {report.title}
-            </h3>
-            <span className="shrink-0 text-[10px] text-slate-400 font-medium">
-              {timeAgo(report.createdAt)}
-            </span>
-          </div>
-          <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
-            <MapPin size={11} className="shrink-0 text-slate-400" />
-            <span className="truncate">{report.addressText}</span>
-          </div>
+
+      {/* Card Body */}
+      <div className="flex flex-col flex-1 p-5">
+        <h3 className="text-lg font-extrabold text-slate-800 group-hover:text-brand-600 transition leading-tight mb-2">
+          {report.title}
+        </h3>
+        <div className="flex items-start gap-1.5 text-xs text-slate-500 mb-4 line-clamp-2 leading-relaxed">
+          <MapPin size={14} className="shrink-0 text-slate-400 mt-0.5" />
+          <span>{report.addressText}</span>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-          <StatusBadge status={report.status} />
+        <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
           <CategoryChip category={report.category} />
-          <SeverityDots value={report.severity} />
-          {report.upvoteCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-slate-400 font-bold ml-1">
-              <ThumbsUp size={10} /> {report.upvoteCount}
-            </span>
-          )}
+          <div className="flex items-center gap-3 text-[11px] text-slate-400 font-medium tracking-wide">
+            <span>{timeAgo(report.createdAt)}</span>
+            {report.upvoteCount > 0 && (
+              <span className="flex items-center gap-1 font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                <ThumbsUp size={12} /> {report.upvoteCount}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Link>

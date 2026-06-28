@@ -12,7 +12,7 @@ model User {
   phone              String   @unique
   name               String
   trustScore         Int      @default(50)
-  band               String   @default("Trusted") // "New" | "Trusted" | "Champion"
+  band               String   @default("Citizen") // "Citizen" | "Volunteer" | "Guardian" | "Champion" | "Ward Keeper" | "City Steward" | "Nation Builder"
   homeLat            Float
   homeLng            Float
   language           String   @default("en")

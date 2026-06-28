@@ -61,24 +61,88 @@ export default function CitizenHome() {
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto px-1 py-2">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight font-serif-header text-slate-800">
-            Caring for Andheri West
-          </h1>
-          <p className="text-xs text-slate-400 font-medium">
-            Ward 14 · Andheri West, Mumbai
-          </p>
+      {/* Hero Section: The Living Miniature */}
+      <div className="relative w-full h-[400px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/50 mb-4 bg-slate-100 group">
+        <img
+          src="/assets/hero.png"
+          alt="Andheri West Miniature"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-[20s] ease-linear group-hover:scale-110"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 pointer-events-none" />
+
+        {/* Dynamic Glowing Markers on the Diorama */}
+        {reports.slice(0, 15).map((r, i) => {
+          // Calculate arbitrary, scattered positions on the diorama based on report ID for stability
+          const pseudoX = 15 + ((parseInt(r.id.replace("CP-", "")) * 17) % 70);
+          const pseudoY = 20 + ((parseInt(r.id.replace("CP-", "")) * 23) % 60);
+          const isCritical = r.severity >= 4;
+          return (
+            <div
+              key={r.id}
+              className="absolute group/marker"
+              style={{ left: `${pseudoX}%`, top: `${pseudoY}%` }}
+            >
+              <div
+                className={`relative w-2.5 h-2.5 rounded-full ${
+                  isCritical ? "bg-rose-500" : "bg-saffron"
+                } shadow-[0_0_15px_rgba(255,255,255,0.8)]`}
+              >
+                <div
+                  className={`absolute inset-0 rounded-full animate-pulse-ring ${
+                    isCritical ? "bg-rose-500" : "bg-saffron"
+                  }`}
+                />
+              </div>
+              {/* Tooltip on hover */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 p-2 bg-white/95 backdrop-blur-md rounded-lg shadow-xl text-[10px] opacity-0 group-hover/marker:opacity-100 transition-opacity pointer-events-none z-10 border border-slate-100">
+                <span className="block font-bold text-slate-800 truncate">{r.title}</span>
+                <span className="block text-slate-500 truncate mt-0.5">{r.addressText}</span>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Hero Overlay Details */}
+        <div className="absolute top-0 left-0 w-full p-6 flex items-start justify-between">
+          <div>
+            <h2 className="text-[10px] font-extrabold tracking-widest text-white/80 uppercase mb-1">
+              Ward 14
+            </h2>
+            <h1 className="text-3xl font-extrabold tracking-tight font-serif-header text-white drop-shadow-md">
+              Andheri West
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            {me ? <TrustBadge score={me.trustScore} /> : null}
+            <Link href="/report/new" className="btn-primary !bg-white/95 !text-slate-900 hover:!bg-white shadow-xl backdrop-blur-md">
+              <Plus size={16} /> Report an issue
+            </Link>
+            <button onClick={handleLogout} className="btn-ghost !bg-white/20 !border-white/20 !text-white hover:!bg-white/30 backdrop-blur-md !px-3" title="Log out">
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {me ? <TrustBadge score={me.trustScore} /> : null}
-          <Link href="/report/new" className="btn-primary">
-            <Plus size={16} /> Report an issue
-          </Link>
-          <button onClick={handleLogout} className="btn-ghost !px-3" title="Log out">
-            <LogOut size={16} className="text-slate-500" />
-          </button>
+
+        <div className="absolute bottom-6 left-6">
+          <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl shadow-2xl">
+            <div>
+              <div className="text-[10px] font-bold text-white/80 uppercase tracking-wider mb-1">Citizen Health Score</div>
+              <div className="text-3xl font-black text-white flex items-end gap-2 leading-none">
+                73% <span className="text-sm font-bold text-emerald-400 mb-1">↑</span>
+              </div>
+              <div className="text-xs text-white/90 font-medium mt-1">Neighborhood is improving</div>
+            </div>
+            <div className="w-px h-12 bg-white/20 mx-2" />
+            <div className="flex -space-x-2">
+              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-emerald-600 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-40">M</div>
+              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-brand-500 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-30">A</div>
+              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-violet-500 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-20">R</div>
+              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-sky-500 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-10">K</div>
+              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-white/20 flex items-center justify-center text-[10px] text-white font-bold shadow-md backdrop-blur-md">
+                +42
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -158,7 +222,7 @@ export default function CitizenHome() {
                 View public ledger →
               </Link>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2">
               {reports.slice(0, 8).map((r) => (
                 <ReportCard key={r.id} report={r} />
               ))}

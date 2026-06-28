@@ -56,8 +56,8 @@ export default function MapView({
         zoomControl: true,
         scrollWheelZoom: true,
       });
-      L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
-        attribution: "© Google Maps",
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        attribution: "© OpenStreetMap © CARTO",
         maxZoom: 20,
       }).addTo(map);
       layerRef.current = L.layerGroup().addTo(map);
@@ -95,15 +95,19 @@ export default function MapView({
           fillOpacity: 0.18,
         }).addTo(layer);
       }
-      const marker = L.circleMarker([r.location.lat, r.location.lng], {
-        radius: 6 + r.severity,
-        color: "#ffffff",
-        weight: 2,
-        fillColor: color,
-        fillOpacity: 0.95,
+      const meta = CATEGORY_META[r.category];
+      const customIcon = L.icon({
+        iconUrl: meta.iconPath,
+        iconSize: [42, 42],
+        iconAnchor: [21, 42],
+        popupAnchor: [0, -38],
+        className: 'rounded-xl shadow-xl border-2 border-white bg-white transition-transform hover:scale-110 object-cover'
+      });
+
+      const marker = L.marker([r.location.lat, r.location.lng], {
+        icon: customIcon,
       }).addTo(layer);
 
-      const meta = CATEGORY_META[r.category];
       marker.bindPopup(
         `<div style="min-width:190px; font-family: var(--font-sans);">
            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">

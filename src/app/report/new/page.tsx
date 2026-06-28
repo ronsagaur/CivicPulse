@@ -129,112 +129,95 @@ export default function ReportFlow() {
       {/* STEP 1 — capture */}
       {step === 1 && (
         <div className="space-y-4">
-          <div className="card p-5">
-            <h1 className="text-lg font-extrabold">Report an issue</h1>
-            <p className="text-sm text-slate-500">
-              Snap a photo/video or choose a mock category. Our AI fills in the rest.
-            </p>
+          <div className="card p-0 overflow-hidden bg-slate-900 border-slate-800 shadow-2xl relative">
+            
+            {/* Huge Camera Viewport Simulation */}
+            <div className="relative aspect-[4/3] w-full flex flex-col items-center justify-center p-6 text-white overflow-hidden">
+              {imageBase64 ? (
+                <>
+                  {isVideo ? (
+                    <video src={`data:${mediaType};base64,${imageBase64}`} controls className="absolute inset-0 w-full h-full object-cover opacity-90" />
+                  ) : (
+                    <img src={`data:${mediaType};base64,${imageBase64}`} alt="Uploaded preview" className="absolute inset-0 w-full h-full object-cover opacity-90" />
+                  )}
+                  <button onClick={() => { setImageBase64(undefined); setUploadName(null); setMediaType(undefined); }} className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white backdrop-blur-md hover:scale-110 transition z-10">
+                    <X size={18} />
+                  </button>
+                </>
+              ) : (
+                <div className="text-center z-10">
+                  <div className="w-20 h-20 mx-auto rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 mb-4 animate-pulse">
+                    <Camera size={32} className="text-white/80" />
+                  </div>
+                  <h2 className="text-xl font-extrabold text-white tracking-tight">Capture Evidence</h2>
+                  <p className="text-xs text-white/50 mt-2 max-w-[240px] mx-auto">Point your camera at the civic issue. Our AI will analyze the scene.</p>
+                  
+                  <label className="mt-6 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-white text-slate-900 px-6 py-3 text-sm font-extrabold shadow-xl hover:scale-105 transition-transform">
+                    {isVideo ? <Video size={16} /> : <Upload size={16} />}
+                    <span>Open Camera</span>
+                    <input type="file" accept="image/*,video/*" className="hidden" onChange={handleUpload} capture="environment" />
+                  </label>
+                </div>
+              )}
+              {/* Viewport Frame */}
+              <div className="absolute inset-4 border-2 border-white/10 rounded-3xl pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-2 border-white/20 rounded-full pointer-events-none" />
+            </div>
+            
+            {/* Tactile 3D Category Tray */}
+            <div className="bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)] p-5 relative z-20 -mt-6 border-t border-white">
+              <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-5" />
+              <h3 className="text-center text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-4">Or tap a 3D marker</h3>
+              
+              <div className="grid grid-cols-3 gap-3">
+                {SAMPLES.map((s) => {
+                  const meta = CATEGORY_META[s.category];
+                  const isChosen = chosen?.category === s.category;
+                  return (
+                    <button
+                      key={s.category}
+                      onClick={() => {
+                        setChosen(s);
+                        setUploadName(null);
+                        setImageBase64(undefined);
+                        setMediaType(undefined);
+                      }}
+                      className={`relative aspect-square rounded-2xl transition-all duration-300 flex flex-col items-center justify-center p-2 overflow-hidden group ${
+                        isChosen
+                          ? "ring-4 ring-brand-500 scale-105 shadow-xl bg-white"
+                          : "ring-1 ring-slate-100 hover:ring-slate-300 bg-slate-50 hover:bg-white shadow-sm hover:shadow-md"
+                      }`}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br opacity-20 pointer-events-none" />
+                      <div className="relative w-16 h-16 transition-transform duration-500 group-hover:scale-110">
+                        <Image src={meta.iconPath} alt={meta.label} fill sizes="64px" className="object-contain drop-shadow-xl" />
+                      </div>
+                      <span className={`text-center text-[10px] font-extrabold tracking-tight mt-1 z-10 ${isChosen ? "text-brand-700" : "text-slate-600"}`}>
+                        {s.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* Media Preview Box */}
-            {imageBase64 && (
-              <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 relative aspect-video bg-slate-900 grid place-items-center shadow-inner">
-                {isVideo ? (
-                  <video
-                    src={`data:${mediaType};base64,${imageBase64}`}
-                    controls
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <img
-                    src={`data:${mediaType};base64,${imageBase64}`}
-                    alt="Uploaded media preview"
-                    className="w-full h-full object-contain"
-                  />
-                )}
+              <div className="mt-5 space-y-4">
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Add a quick note..."
+                  className="w-full resize-none rounded-xl bg-slate-50 border-transparent p-4 text-sm font-medium text-slate-700 outline-none focus:bg-white focus:border-brand-400 focus:ring-4 focus:ring-brand-50 transition-all"
+                  rows={2}
+                />
+                
                 <button
-                  onClick={() => {
-                    setImageBase64(undefined);
-                    setUploadName(null);
-                    setMediaType(undefined);
-                  }}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-900/60 text-white hover:bg-slate-900 hover:scale-105 transition"
+                  onClick={analyze}
+                  disabled={!chosen && !imageBase64}
+                  className="btn-primary w-full py-4 text-base shadow-brand-500/25"
                 >
-                  <X size={14} />
+                  <Sparkles size={18} /> Analyze Evidence
                 </button>
               </div>
-            )}
-
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {SAMPLES.map((s) => {
-                const meta = CATEGORY_META[s.category];
-                return (
-                  <button
-                    key={s.category}
-                    onClick={() => {
-                      setChosen(s);
-                      setUploadName(null);
-                      setImageBase64(undefined);
-                      setMediaType(undefined);
-                    }}
-                    className={`relative aspect-square rounded-xl bg-gradient-to-br ${s.grad} ring-2 transition flex flex-col items-center justify-center p-2 ${
-                      chosen?.category === s.category
-                        ? "ring-brand-600 scale-[1.02] shadow-md"
-                        : "ring-transparent hover:ring-slate-300"
-                    }`}
-                  >
-                    <div className="relative w-12 h-12 flex-1">
-                      <Image
-                        src={meta.iconPath}
-                        alt={meta.label}
-                        fill
-                        sizes="48px"
-                        className="object-contain drop-shadow-md"
-                      />
-                    </div>
-                    <span className="text-center text-[10px] font-bold text-slate-700/90 mt-1 block tracking-tight">
-                      {s.label}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
-
-            <div className="my-3 flex items-center gap-2 text-xs text-slate-400">
-              <span className="h-px flex-1 bg-slate-200" /> or upload real media <span className="h-px flex-1 bg-slate-200" />
-            </div>
-
-            <label className="btn-ghost w-full cursor-pointer flex items-center justify-center gap-2">
-              {isVideo ? <Video size={15} className="text-brand-600" /> : <Upload size={15} />}
-              <span className="truncate max-w-[280px]">
-                {uploadName ? uploadName : "Upload photo or video"}
-              </span>
-              <input
-                type="file"
-                accept="image/*,video/*"
-                className="hidden"
-                onChange={handleUpload}
-              />
-            </label>
-
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add a note describing the issue..."
-              className="mt-3 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-brand-400"
-              rows={2}
-            />
-
-            <div className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-              <MapPin size={14} /> Auto-located: MG Road, Andheri W ✓
-            </div>
-
-            <button
-              onClick={analyze}
-              disabled={!chosen && !imageBase64}
-              className="btn-primary mt-4 w-full"
-            >
-              <Sparkles size={16} /> Analyze with Gemini AI
-            </button>
           </div>
         </div>
       )}

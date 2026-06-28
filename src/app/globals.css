@@ -10,19 +10,20 @@
 }
 
 html {
-  background-color: #faf8f5;
+  background-color: #fdfbf7;
   -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background-color: #faf8f5;
+  background-color: #fdfbf7;
   background-image: 
-    /* Terracotta bleed */
-    radial-gradient(circle at 90% 10%, rgba(194, 89, 63, 0.04) 0%, transparent 40%),
-    /* Marigold bleed */
-    radial-gradient(circle at 10% 90%, rgba(245, 158, 11, 0.03) 0%, transparent 40%),
-    /* Subtle geometric grid pattern */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M60 0H0v60h60V0z' fill='none'/%3E%3Cpath d='M60 60H0V0h60v60z' fill='none'/%3E%3Cpath d='M0 0h60v1H0z' fill='%231e1b18' fill-opacity='.015'/%3E%3Cpath d='M0 0v60h1V0z' fill='%231e1b18' fill-opacity='.015'/%3E%3C/svg%3E");
+    /* Soft glowing vignette */
+    radial-gradient(circle at 50% 0%, rgba(255,255,255, 0.8) 0%, transparent 60%),
+    /* Main structural parcel grid */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpath d='M120 0H0v120h120V0z' fill='none'/%3E%3Cpath d='M0 0h120v1.5H0z' fill='%2364748b' fill-opacity='.04'/%3E%3Cpath d='M0 0v120h1.5V0z' fill='%2364748b' fill-opacity='.04'/%3E%3C/svg%3E"),
+    /* Fine engineering subdivision grid */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M24 0H0v24h24V0z' fill='none'/%3E%3Cpath d='M0 0h24v0.5H0z' fill='%2364748b' fill-opacity='.02'/%3E%3Cpath d='M0 0v24h0.5V0z' fill='%2364748b' fill-opacity='.02'/%3E%3C/svg%3E");
+  background-attachment: fixed;
   color: #1e1b18;
 }
 

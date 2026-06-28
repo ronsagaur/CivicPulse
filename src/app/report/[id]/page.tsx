@@ -242,38 +242,57 @@ export default function ReportDetail() {
         </div>
       )}
 
-      {/* Timeline */}
-      <div className="card p-4">
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">
-          Timeline · immutable audit log
+      {/* The Visual Journey Timeline */}
+      <div className="card p-6 bg-gradient-to-b from-white to-slate-50">
+        <h2 className="mb-6 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 text-center">
+          Resolution Journey
         </h2>
-        <ol className="space-y-3">
+        <div className="relative border-l-2 border-dashed border-slate-200 ml-6 space-y-8 pb-4">
           {r.events
             .slice()
             .reverse()
-            .map((e) => (
-              <li key={e.id} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <span
-                    className={`mt-1 h-2.5 w-2.5 rounded-full ${
-                      e.actorType === "AUTHORITY"
-                        ? "bg-brand-600"
-                        : e.actorType === "SYSTEM"
-                        ? "bg-slate-400"
-                        : "bg-emerald-500"
-                    }`}
-                  />
-                  <span className="w-px flex-1 bg-slate-200" />
-                </div>
-                <div className="-mt-0.5 pb-1">
-                  <div className="text-sm text-slate-700">{e.label}</div>
-                  <div className="text-[11px] text-slate-400">
-                    {e.actorType.toLowerCase()} · {timeAgo(e.at)}
+            .map((e, index) => {
+              const isFirst = index === 0;
+              let icon = "📸";
+              let color = "bg-slate-100 text-slate-600";
+              let ring = "ring-slate-200";
+
+              if (e.label.includes("Created")) {
+                icon = "📸"; color = "bg-sky-100 text-sky-700"; ring = "ring-sky-200";
+              } else if (e.label.includes("verified")) {
+                icon = "🤖"; color = "bg-indigo-100 text-indigo-700"; ring = "ring-indigo-200";
+              } else if (e.label.includes("confirm")) {
+                icon = "👥"; color = "bg-emerald-100 text-emerald-700"; ring = "ring-emerald-200";
+              } else if (e.label.includes("routed")) {
+                icon = "🏛"; color = "bg-amber-100 text-amber-700"; ring = "ring-amber-200";
+              } else if (e.label.includes("started")) {
+                icon = "🛠"; color = "bg-orange-100 text-orange-700"; ring = "ring-orange-200";
+              } else if (e.label.includes("Resolved")) {
+                icon = "✅"; color = "bg-neem/20 text-neem"; ring = "ring-neem/40";
+              } else if (e.label.includes("escalated")) {
+                icon = "🚨"; color = "bg-rose-100 text-rose-700"; ring = "ring-rose-200";
+              }
+
+              return (
+                <div key={e.id} className={`relative flex items-start gap-4 transition-all duration-500 ${isFirst ? 'scale-100 opacity-100' : 'scale-95 opacity-70 hover:scale-100 hover:opacity-100'}`}>
+                  {/* Icon Node */}
+                  <div className={`absolute -left-[27px] w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg ring-4 ring-white ${color}`}>
+                    {icon}
+                  </div>
+                  
+                  {/* Event Card */}
+                  <div className={`ml-8 flex-1 rounded-2xl p-4 shadow-sm border bg-white ${isFirst ? 'border-slate-200 shadow-md' : 'border-slate-100'}`}>
+                    <div className="font-extrabold text-slate-800 text-sm mb-1">{e.label}</div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-wide uppercase text-slate-400">
+                      <span>{e.actorType}</span>
+                      <span>·</span>
+                      <span>{timeAgo(e.at)}</span>
+                    </div>
                   </div>
                 </div>
-              </li>
-            ))}
-        </ol>
+              );
+            })}
+        </div>
       </div>
 
       {/* Community footer */}

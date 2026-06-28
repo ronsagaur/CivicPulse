@@ -20,6 +20,12 @@ const config: Config = {
           800: "#82290f",
           900: "#6a2210",
         },
+        asphalt: "#2d3748", // Roads
+        banyan: "#2e5b3d", // Parks
+        municipal: "#0ea5e9", // Water/Utilities
+        saffron: "#ff9933", // Civic Alerts
+        neem: "#34a853", // Success
+        concrete: "#d6d3d1", // Structures
         ink: {
           DEFAULT: "#1e1b18",
           soft: "#34302c",
