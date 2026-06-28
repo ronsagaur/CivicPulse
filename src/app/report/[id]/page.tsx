@@ -76,7 +76,7 @@ export default function ReportDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in space-y-4">
+    <div className="mx-auto max-w-2xl animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
         <BackLink href="/" label="Map" />
         <button className="btn-ghost !px-3 !py-1.5 text-xs">

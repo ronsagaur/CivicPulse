@@ -53,7 +53,7 @@ export default function CitizenHome() {
   const myRank = leaderboard.findIndex((u) => u.id === "u-you") + 1;
 
   return (
-    <div className="space-y-7 animate-fade-in max-w-7xl mx-auto px-1 py-2">
+    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto px-1 py-2">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -172,9 +172,9 @@ export default function CitizenHome() {
                   <span className="text-slate-500">Trust Score Progress</span>
                   <span className="font-bold text-brand-700">{me.trustScore}/100</span>
                 </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-3.5 w-full bg-orange-100/40 rounded-full overflow-hidden p-0.5 border border-orange-100/20 shadow-inner">
                   <div
-                    className="h-full bg-brand-500 rounded-full transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-brand-400 to-brand-500 rounded-full transition-all duration-500"
                     style={{ width: `${me.trustScore}%` }}
                   />
                 </div>
@@ -426,8 +426,8 @@ function ChatbotWidget() {
   };
 
   return (
-    <div className="card flex flex-col h-[340px] overflow-hidden">
-      <div className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 border-b border-slate-100 shrink-0">
+    <div className="card flex flex-col h-[340px] overflow-hidden bg-gradient-to-b from-brand-50/40 to-white/95 border-brand-200/50 shadow-sm shadow-brand-600/5">
+      <div className="flex items-center gap-1.5 px-4 py-3 bg-brand-100/30 border-b border-brand-200/40 shrink-0">
         <MessageSquare className="text-brand-600" size={16} />
         <span className="text-xs font-bold text-slate-700">AI Ward Assistant</span>
         <span className="ml-auto chip bg-brand-50 text-brand-600 ring-brand-100 text-[9px] py-0">Gemini 2.0</span>

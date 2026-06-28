@@ -10,10 +10,10 @@ export default function ReportCard({ report }: { report: Report }) {
   return (
     <Link
       href={`/report/${report.id}`}
-      className="card card-hover group flex min-w-0 gap-3 overflow-hidden p-3"
+      className="card card-hover group flex min-w-0 h-24 gap-3 overflow-hidden p-3"
     >
       <div
-        className={`relative grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${report.imagePlaceholder} text-2xl shadow-inner sm:h-20 sm:w-20 sm:text-3xl`}
+        className={`relative grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${report.imagePlaceholder} text-2xl shadow-inner`}
       >
         <span aria-hidden>{meta.emoji}</span>
         {report.mediaType === "video" && (

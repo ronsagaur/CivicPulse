@@ -62,7 +62,7 @@ export default function AuthorityDashboard() {
   }
 
   return (
-    <div className="animate-fade-in space-y-5">
+    <div className="animate-fade-in space-y-8 max-w-7xl mx-auto px-1 py-2">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
