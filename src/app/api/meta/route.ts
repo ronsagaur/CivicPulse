@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, getDepartments, getUsers, getWards } from "@/lib/store";
+import { getCurrentUserOrNull, getDepartments, getUsers, getWards } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +8,6 @@ export async function GET() {
     wards: await getWards(),
     departments: await getDepartments(),
     users: await getUsers(),
-    currentUser: await getCurrentUser(),
+    currentUser: await getCurrentUserOrNull(),
   });
 }

@@ -21,17 +21,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Basic role routing enforcement
-  if (pathname.startsWith("/authority") && session.value !== "AUTHORITY_SESSION") {
-    // If a citizen tries to access authority portal, redirect to citizen home
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (pathname === "/" && session.value === "AUTHORITY_SESSION") {
-    // If an authority goes to root, redirect to authority portal
-    return NextResponse.redirect(new URL("/authority", request.url));
-  }
-
   return NextResponse.next();
 }
 

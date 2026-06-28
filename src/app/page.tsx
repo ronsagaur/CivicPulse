@@ -114,6 +114,9 @@ export default function CitizenHome() {
           </div>
           <div className="flex items-center gap-3">
             {me ? <TrustBadge score={me.trustScore} /> : null}
+            <Link href="/authority" className="btn-ghost !bg-white/10 !border-white/10 !text-white hover:!bg-white/20 backdrop-blur-md !px-3 flex items-center gap-1.5 text-xs font-bold" title="Go to Authority Portal">
+              <ShieldCheck size={15} /> Authority
+            </Link>
             <Link href="/report/new" className="btn-primary !bg-white/95 !text-slate-900 hover:!bg-white shadow-xl backdrop-blur-md">
               <Plus size={16} /> Report an issue
             </Link>

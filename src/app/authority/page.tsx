@@ -92,6 +92,9 @@ export default function AuthorityDashboard() {
           <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-200">
             🔔 {slaRisk} need attention today
           </span>
+          <Link href="/" className="btn-ghost !px-3 flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl" title="Go to Citizen Portal">
+            View Citizen Feed
+          </Link>
           <button onClick={handleLogout} className="btn-ghost !px-3" title="Log out">
             <LogOut size={16} className="text-slate-500" />
           </button>
