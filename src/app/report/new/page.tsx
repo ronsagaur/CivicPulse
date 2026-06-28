@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import {
   Camera,
@@ -164,29 +165,38 @@ export default function ReportFlow() {
             )}
 
             <div className="mt-4 grid grid-cols-3 gap-2">
-              {SAMPLES.map((s) => (
-                <button
-                  key={s.category}
-                  onClick={() => {
-                    setChosen(s);
-                    setUploadName(null);
-                    setImageBase64(undefined);
-                    setMediaType(undefined);
-                  }}
-                  className={`relative aspect-square rounded-xl bg-gradient-to-br ${s.grad} ring-2 transition ${
-                    chosen?.category === s.category
-                      ? "ring-brand-600 scale-[1.02]"
-                      : "ring-transparent hover:ring-slate-300"
-                  }`}
-                >
-                  <span className="absolute inset-0 grid place-items-center text-3xl">
-                    {CATEGORY_META[s.category].emoji}
-                  </span>
-                  <span className="absolute bottom-1 left-0 right-0 text-center text-[10px] font-semibold text-slate-700/80">
-                    {s.label}
-                  </span>
-                </button>
-              ))}
+              {SAMPLES.map((s) => {
+                const meta = CATEGORY_META[s.category];
+                return (
+                  <button
+                    key={s.category}
+                    onClick={() => {
+                      setChosen(s);
+                      setUploadName(null);
+                      setImageBase64(undefined);
+                      setMediaType(undefined);
+                    }}
+                    className={`relative aspect-square rounded-xl bg-gradient-to-br ${s.grad} ring-2 transition flex flex-col items-center justify-center p-2 ${
+                      chosen?.category === s.category
+                        ? "ring-brand-600 scale-[1.02] shadow-md"
+                        : "ring-transparent hover:ring-slate-300"
+                    }`}
+                  >
+                    <div className="relative w-12 h-12 flex-1">
+                      <Image
+                        src={meta.iconPath}
+                        alt={meta.label}
+                        fill
+                        sizes="48px"
+                        className="object-contain drop-shadow-md"
+                      />
+                    </div>
+                    <span className="text-center text-[10px] font-bold text-slate-700/90 mt-1 block tracking-tight">
+                      {s.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="my-3 flex items-center gap-2 text-xs text-slate-400">

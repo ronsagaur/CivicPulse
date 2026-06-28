@@ -105,15 +105,18 @@ export default function MapView({
 
       const meta = CATEGORY_META[r.category];
       marker.bindPopup(
-        `<div style="min-width:180px">
-           <div style="font-weight:700;margin-bottom:2px">${meta.emoji} ${escapeHtml(
-          r.title
-        )}</div>
-           <div style="font-size:12px;color:#64748b">${escapeHtml(
-             r.addressText
-           )}</div>
-           <div style="font-size:12px;margin-top:6px">${STATUS_META[r.status].label} · sev ${r.severity} · ${r.upvoteCount} upvotes</div>
-           <a href="/report/${r.id}" style="display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:#2563eb">Open report →</a>
+        `<div style="min-width:190px; font-family: var(--font-sans);">
+           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+             <img src="${meta.iconPath}" alt="${meta.label}" style="width: 24px; height: 24px; object-fit: contain;" />
+             <div style="font-weight:700; color:#1e1b18; font-size:13px;">${escapeHtml(r.title)}</div>
+           </div>
+           <div style="font-size:11px; color:#64748b">${escapeHtml(r.addressText)}</div>
+           <div style="font-size:11px; margin-top:6px; font-weight:600; color:#475569;">
+             ${STATUS_META[r.status].label} · Sev ${r.severity}
+           </div>
+           <a href="/report/${r.id}" style="display:inline-block; margin-top:8px; font-size:11px; font-weight:700; color:#c2593f; text-decoration: none;">
+             Track Audit Timeline →
+           </a>
          </div>`
       );
       marker.on("click", () => marker.openPopup());

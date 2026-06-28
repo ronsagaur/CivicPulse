@@ -18,19 +18,19 @@ export type IssueCategory =
 
 export const CATEGORY_META: Record<
   IssueCategory,
-  { label: string; emoji: string }
+  { label: string; emoji: string; iconPath: string }
 > = {
-  POTHOLE: { label: "Pothole", emoji: "🕳️" },
-  STREETLIGHT: { label: "Streetlight", emoji: "💡" },
-  WATER_LEAK: { label: "Water Leak", emoji: "💧" },
-  SEWAGE: { label: "Sewage", emoji: "🚽" },
-  GARBAGE: { label: "Garbage", emoji: "🗑️" },
-  STRAY_ANIMAL: { label: "Stray Animal", emoji: "🐕" },
-  TRAFFIC_VIOLATION: { label: "Traffic", emoji: "🚦" },
-  DAMAGED_SIGNAGE: { label: "Damaged Signage", emoji: "🪧" },
-  ENCROACHMENT: { label: "Encroachment", emoji: "🚧" },
-  PUBLIC_SAFETY: { label: "Public Safety", emoji: "⚠️" },
-  OTHER: { label: "Other", emoji: "📌" },
+  POTHOLE: { label: "Pothole", emoji: "🕳️", iconPath: "/assets/icons/pothole.png" },
+  STREETLIGHT: { label: "Streetlight", emoji: "💡", iconPath: "/assets/icons/streetlight.png" },
+  WATER_LEAK: { label: "Water Leak", emoji: "💧", iconPath: "/assets/icons/water_leak.png" },
+  SEWAGE: { label: "Sewage", emoji: "🚽", iconPath: "/assets/icons/sewage.png" },
+  GARBAGE: { label: "Garbage", emoji: "🗑️", iconPath: "/assets/icons/garbage.png" },
+  STRAY_ANIMAL: { label: "Stray Animal", emoji: "🐕", iconPath: "/assets/icons/stray_animal.png" },
+  TRAFFIC_VIOLATION: { label: "Traffic", emoji: "🚦", iconPath: "/assets/icons/traffic_violation.png" },
+  DAMAGED_SIGNAGE: { label: "Damaged Signage", emoji: "🪧", iconPath: "/assets/icons/damaged_signage.png" },
+  ENCROACHMENT: { label: "Encroachment", emoji: "🚧", iconPath: "/assets/icons/encroachment.png" },
+  PUBLIC_SAFETY: { label: "Public Safety", emoji: "⚠️", iconPath: "/assets/icons/public_safety.png" },
+  OTHER: { label: "Other", emoji: "📌", iconPath: "/assets/icons/other.png" },
 };
 
 // The full lifecycle. Order matters — used to render progress.
