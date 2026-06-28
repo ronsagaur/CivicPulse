@@ -37,8 +37,9 @@ body {
 
 .card {
   border-radius: 1rem;
-  border-width: 1px;
-  border-color: rgb(254 215 170 / 0.5); /* border-orange-100/50 */
+  border-width: 1.5px;
+  border-style: dashed;
+  border-color: rgb(254 215 170); /* border-orange-200 */
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   transition-property: all;
