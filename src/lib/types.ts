@@ -18,19 +18,115 @@ export type IssueCategory =
 
 export const CATEGORY_META: Record<
   IssueCategory,
-  { label: string; emoji: string; iconPath: string }
+  {
+    label: string;
+    emoji: string;
+    iconPath: string;
+    colorClass: string;
+    bgClass: string;
+    dotClass: string;
+    hexColor: string;
+  }
 > = {
-  POTHOLE: { label: "Pothole", emoji: "🕳️", iconPath: "/assets/icons/pothole.png" },
-  STREETLIGHT: { label: "Streetlight", emoji: "💡", iconPath: "/assets/icons/streetlight.png" },
-  WATER_LEAK: { label: "Water Leak", emoji: "💧", iconPath: "/assets/icons/water_leak.png" },
-  SEWAGE: { label: "Sewage", emoji: "🚽", iconPath: "/assets/icons/sewage.png" },
-  GARBAGE: { label: "Garbage", emoji: "🗑️", iconPath: "/assets/icons/garbage.png" },
-  STRAY_ANIMAL: { label: "Stray Animal", emoji: "🐕", iconPath: "/assets/icons/stray_animal.png" },
-  TRAFFIC_VIOLATION: { label: "Traffic", emoji: "🚦", iconPath: "/assets/icons/traffic_violation.png" },
-  DAMAGED_SIGNAGE: { label: "Damaged Signage", emoji: "🪧", iconPath: "/assets/icons/damaged_signage.png" },
-  ENCROACHMENT: { label: "Encroachment", emoji: "🚧", iconPath: "/assets/icons/encroachment.png" },
-  PUBLIC_SAFETY: { label: "Public Safety", emoji: "⚠️", iconPath: "/assets/icons/public_safety.png" },
-  OTHER: { label: "Other", emoji: "📌", iconPath: "/assets/icons/other.png" },
+  POTHOLE: {
+    label: "Pothole",
+    emoji: "🕳️",
+    iconPath: "/assets/icons/pothole.png",
+    colorClass: "slate",
+    bgClass: "bg-slate-50 border-slate-200 text-slate-700",
+    dotClass: "bg-slate-500",
+    hexColor: "#64748b",
+  },
+  STREETLIGHT: {
+    label: "Streetlight",
+    emoji: "💡",
+    iconPath: "/assets/icons/streetlight.png",
+    colorClass: "amber",
+    bgClass: "bg-amber-50 border-amber-200 text-amber-700",
+    dotClass: "bg-amber-500",
+    hexColor: "#f59e0b",
+  },
+  WATER_LEAK: {
+    label: "Water Leak",
+    emoji: "💧",
+    iconPath: "/assets/icons/water_leak.png",
+    colorClass: "blue",
+    bgClass: "bg-blue-50 border-blue-200 text-blue-700",
+    dotClass: "bg-blue-500",
+    hexColor: "#3b82f6",
+  },
+  SEWAGE: {
+    label: "Sewage",
+    emoji: "🚽",
+    iconPath: "/assets/icons/sewage.png",
+    colorClass: "cyan",
+    bgClass: "bg-cyan-50 border-cyan-200 text-cyan-700",
+    dotClass: "bg-cyan-500",
+    hexColor: "#06b6d4",
+  },
+  GARBAGE: {
+    label: "Garbage",
+    emoji: "🗑️",
+    iconPath: "/assets/icons/garbage.png",
+    colorClass: "emerald",
+    bgClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    dotClass: "bg-emerald-500",
+    hexColor: "#10b981",
+  },
+  STRAY_ANIMAL: {
+    label: "Stray Animal",
+    emoji: "🐕",
+    iconPath: "/assets/icons/stray_animal.png",
+    colorClass: "orange",
+    bgClass: "bg-orange-50 border-orange-200 text-orange-700",
+    dotClass: "bg-orange-500",
+    hexColor: "#b45309",
+  },
+  TRAFFIC_VIOLATION: {
+    label: "Traffic",
+    emoji: "🚦",
+    iconPath: "/assets/icons/traffic_violation.png",
+    colorClass: "slate",
+    bgClass: "bg-slate-50 border-slate-200 text-slate-700",
+    dotClass: "bg-slate-500",
+    hexColor: "#64748b",
+  },
+  DAMAGED_SIGNAGE: {
+    label: "Damaged Signage",
+    emoji: "🪧",
+    iconPath: "/assets/icons/damaged_signage.png",
+    colorClass: "slate",
+    bgClass: "bg-slate-50 border-slate-200 text-slate-700",
+    dotClass: "bg-slate-500",
+    hexColor: "#64748b",
+  },
+  ENCROACHMENT: {
+    label: "Encroachment",
+    emoji: "🚧",
+    iconPath: "/assets/icons/encroachment.png",
+    colorClass: "purple",
+    bgClass: "bg-purple-50 border-purple-200 text-purple-700",
+    dotClass: "bg-purple-500",
+    hexColor: "#8b5cf6",
+  },
+  PUBLIC_SAFETY: {
+    label: "Public Safety",
+    emoji: "⚠️",
+    iconPath: "/assets/icons/public_safety.png",
+    colorClass: "red",
+    bgClass: "bg-rose-50 border-rose-200 text-rose-700",
+    dotClass: "bg-rose-500",
+    hexColor: "#ef4444",
+  },
+  OTHER: {
+    label: "Other",
+    emoji: "📌",
+    iconPath: "/assets/icons/other.png",
+    colorClass: "slate",
+    bgClass: "bg-slate-50 border-slate-200 text-slate-700",
+    dotClass: "bg-slate-500",
+    hexColor: "#475569",
+  },
 };
 
 // The full lifecycle. Order matters — used to render progress.
