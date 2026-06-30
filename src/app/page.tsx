@@ -63,50 +63,16 @@ export default function CitizenHome() {
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto px-1 py-2">
-      {/* Hero Section: The Living Miniature */}
+      {/* Hero Section: The Interactive Map */}
       <div className="relative w-full h-[400px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/50 mb-4 bg-slate-100 group">
-        <img
-          src="/assets/hero.png"
-          alt="Andheri West Miniature"
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-[20s] ease-linear group-hover:scale-110"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 pointer-events-none" />
+        <MapView reports={reports} center={me ? me.home : WARD_CENTER} heat={heat} height={400} />
+        
+        {/* Edge fade gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/20 pointer-events-none z-[999]" />
 
-        {/* Dynamic Glowing Markers on the Diorama */}
-        {reports.slice(0, 15).map((r, i) => {
-          // Calculate arbitrary, scattered positions on the diorama based on report ID for stability
-          const pseudoX = 15 + ((parseInt(r.id.replace("CP-", "")) * 17) % 70);
-          const pseudoY = 20 + ((parseInt(r.id.replace("CP-", "")) * 23) % 60);
-          const isCritical = r.severity >= 4;
-          return (
-            <div
-              key={r.id}
-              className="absolute group/marker"
-              style={{ left: `${pseudoX}%`, top: `${pseudoY}%` }}
-            >
-              <div
-                className={`relative w-2.5 h-2.5 rounded-full ${
-                  isCritical ? "bg-rose-500" : "bg-saffron"
-                } shadow-[0_0_15px_rgba(255,255,255,0.8)]`}
-              >
-                <div
-                  className={`absolute inset-0 rounded-full animate-pulse-ring ${
-                    isCritical ? "bg-rose-500" : "bg-saffron"
-                  }`}
-                />
-              </div>
-              {/* Tooltip on hover */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 p-2 bg-white/95 backdrop-blur-md rounded-lg shadow-xl text-[10px] opacity-0 group-hover/marker:opacity-100 transition-opacity pointer-events-none z-10 border border-slate-100">
-                <span className="block font-bold text-slate-800 truncate">{r.title}</span>
-                <span className="block text-slate-500 truncate mt-0.5">{r.addressText}</span>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Hero Overlay Details */}
-        <div className="absolute top-0 left-0 w-full p-6 flex items-start justify-between">
-          <div>
+        {/* Hero Overlay Details (HUD) */}
+        <div className="absolute top-0 left-0 w-full p-6 flex items-start justify-between z-[1000] pointer-events-none">
+          <div className="pointer-events-auto">
             <h2 className="text-[10px] font-extrabold tracking-widest text-white/80 uppercase mb-1">
               Ward 14
             </h2>
@@ -114,39 +80,63 @@ export default function CitizenHome() {
               Andheri West
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 pointer-events-auto">
             {me ? <TrustBadge score={me.trustScore} /> : null}
-            <Link href="/authority" className="btn-ghost !bg-white/10 !border-white/10 !text-white hover:!bg-white/20 backdrop-blur-md !px-3 flex items-center gap-1.5 text-xs font-bold" title="Go to Authority Portal">
+            <Link href="/authority" className="btn-ghost !bg-white/15 !border-white/10 !text-white hover:!bg-white/25 backdrop-blur-md !px-3 flex items-center gap-1.5 text-xs font-bold shadow-lg" title="Go to Authority Portal">
               <ShieldCheck size={15} /> Authority
             </Link>
             <Link href="/report/new" className="btn-primary !bg-white/95 !text-slate-900 hover:!bg-white shadow-xl backdrop-blur-md">
               <Plus size={16} /> Report an issue
             </Link>
-            <button onClick={handleLogout} className="btn-ghost !bg-white/20 !border-white/20 !text-white hover:!bg-white/30 backdrop-blur-md !px-3" title="Log out">
+            <button onClick={handleLogout} className="btn-ghost !bg-white/20 !border-white/20 !text-white hover:!bg-white/30 backdrop-blur-md !px-3 shadow-lg" title="Log out">
               <LogOut size={16} />
             </button>
           </div>
         </div>
 
-        <div className="absolute bottom-6 left-6">
-          <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl shadow-2xl">
+        {/* Bottom Left: Health Score Card */}
+        <div className="absolute bottom-6 left-6 z-[1000] pointer-events-none">
+          <div className="flex items-center gap-4 bg-white/90 backdrop-blur-md border border-white/20 p-4 rounded-xl shadow-2xl pointer-events-auto text-slate-800">
             <div>
-              <div className="text-[10px] font-bold text-white/80 uppercase tracking-wider mb-1">Citizen Health Score</div>
-              <div className="text-3xl font-black text-white flex items-end gap-2 leading-none">
-                73% <span className="text-sm font-bold text-emerald-400 mb-1">↑</span>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Citizen Health Score</div>
+              <div className="text-3xl font-black text-slate-800 flex items-end gap-2 leading-none">
+                73% <span className="text-sm font-bold text-emerald-600 mb-1">↑</span>
               </div>
-              <div className="text-xs text-white/90 font-medium mt-1">Neighborhood is improving</div>
+              <div className="text-xs text-slate-600 font-medium mt-1">Neighborhood is improving</div>
             </div>
-            <div className="w-px h-12 bg-white/20 mx-2" />
+            <div className="w-px h-12 bg-slate-200 mx-2" />
             <div className="flex -space-x-2">
-              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-emerald-600 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-40">M</div>
-              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-brand-500 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-30">A</div>
-              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-violet-500 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-20">R</div>
-              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-sky-500 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-10">K</div>
-              <div className="w-8 h-8 rounded-full border-2 border-white/20 bg-white/20 flex items-center justify-center text-[10px] text-white font-bold shadow-md backdrop-blur-md">
+              <div className="w-8 h-8 rounded-full border-2 border-white bg-emerald-600 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-40">M</div>
+              <div className="w-8 h-8 rounded-full border-2 border-white bg-brand-500 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-30">A</div>
+              <div className="w-8 h-8 rounded-full border-2 border-white bg-violet-500 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-20">R</div>
+              <div className="w-8 h-8 rounded-full border-2 border-white bg-sky-500 flex items-center justify-center text-[10px] text-white font-bold shadow-md z-10">K</div>
+              <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 font-bold shadow-md">
                 +42
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Bottom Right: Map Controls Legend HUD */}
+        <div className="absolute bottom-6 right-6 z-[1000] pointer-events-none">
+          <div className="flex items-center gap-4 bg-white/90 backdrop-blur-md border border-white/20 px-4 py-3 rounded-xl shadow-2xl pointer-events-auto text-slate-800 text-xs">
+            <div className="flex items-center gap-3">
+              <Legend color="#ef4444" label="Open" />
+              <Legend color="#f59e0b" label="In progress" />
+              <Legend color="#10b981" label="Resolved" />
+              <Legend color="#e11d48" label="Escalated" />
+            </div>
+            <div className="w-px h-6 bg-slate-200 mx-1" />
+            <button
+              onClick={() => setHeat((h) => !h)}
+              className={`chip ring-1 ${
+                heat
+                  ? "bg-orange-50 text-orange-700 ring-orange-200"
+                  : "bg-slate-100 text-slate-600 ring-slate-200"
+              }`}
+            >
+              <Flame size={13} /> Heatmap {heat ? "ON" : "OFF"}
+            </button>
           </div>
         </div>
       </div>
@@ -328,29 +318,48 @@ export default function CitizenHome() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
-              {/* Map (2 cols) */}
-              <div className="md:col-span-2 card overflow-hidden flex flex-col justify-between">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-dashed border-orange-100/60 bg-slate-50/50">
-                  <div className="flex items-center gap-3 text-xs">
-                    <Legend color="#ef4444" label="Open" />
-                    <Legend color="#f59e0b" label="In progress" />
-                    <Legend color="#10b981" label="Resolved" />
-                    <Legend color="#e11d48" label="Escalated" />
-                  </div>
-                  <button
-                    onClick={() => setHeat((h) => !h)}
-                    className={`chip ring-1 ${
-                      heat
-                        ? "bg-orange-50 text-orange-700 ring-orange-200"
-                        : "bg-slate-100 text-slate-600 ring-slate-200"
-                    }`}
-                  >
-                    <Flame size={13} /> Heatmap {heat ? "ON" : "OFF"}
-                  </button>
+              {/* Diorama (2 cols) */}
+              <div className="md:col-span-2 card overflow-hidden flex flex-col justify-between relative h-[360px] border border-slate-200/60 shadow-md">
+                <img
+                  src="/assets/hero.png"
+                  alt="Andheri West Miniature"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+                <div className="absolute top-4 left-4 z-10">
+                  <h3 className="text-xs font-extrabold text-white drop-shadow-md font-serif-header">Digital Twin (Ward Miniature)</h3>
+                  <p className="text-[9px] text-white/80 mt-0.5">Isometric visualization of local street grievances</p>
                 </div>
-                <div className="flex-1">
-                  <MapView reports={reports} center={me ? me.home : WARD_CENTER} heat={heat} height={360} />
-                </div>
+                
+                {/* Dynamic Glowing Markers on the Diorama */}
+                {reports.slice(0, 15).map((r, i) => {
+                  const pseudoX = 15 + ((parseInt(r.id.replace("CP-", "")) * 17) % 70);
+                  const pseudoY = 20 + ((parseInt(r.id.replace("CP-", "")) * 23) % 60);
+                  const isCritical = r.severity >= 4;
+                  return (
+                    <div
+                      key={r.id}
+                      className="absolute group/marker"
+                      style={{ left: `${pseudoX}%`, top: `${pseudoY}%` }}
+                    >
+                      <div
+                        className={`relative w-2.5 h-2.5 rounded-full ${
+                          isCritical ? "bg-rose-500" : "bg-saffron"
+                        } shadow-[0_0_15px_rgba(255,255,255,0.8)]`}
+                      >
+                        <div
+                          className={`absolute inset-0 rounded-full animate-pulse-ring ${
+                            isCritical ? "bg-rose-500" : "bg-saffron"
+                          }`}
+                        />
+                      </div>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 p-2 bg-white/95 backdrop-blur-md rounded-lg shadow-xl text-[10px] opacity-0 group-hover/marker:opacity-100 transition-opacity pointer-events-none z-10 border border-slate-100">
+                        <span className="block font-bold text-slate-800 truncate">{r.title}</span>
+                        <span className="block text-slate-500 truncate mt-0.5">{r.addressText}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Chatbot (1 col) */}
