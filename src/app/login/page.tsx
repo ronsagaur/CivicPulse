@@ -62,6 +62,34 @@ export default function LoginPage() {
     );
   };
 
+  const handleQuickCitizenLogin = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: "CITIZEN",
+          name: "Rahul Sharma",
+          phone: "9876543210",
+          homeLat: 19.1197,
+          homeLng: 72.8468,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        router.push(data.redirect);
+      } else {
+        setError(data.error || "Login failed.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+      setLoading(false);
+    }
+  };
+
   const handleAuthorityLogin = async () => {
     setLoading(true);
     setError("");
@@ -178,8 +206,21 @@ export default function LoginPage() {
                 </>
               )}
             </button>
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-200"></div>
+              <span className="flex-shrink mx-4 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">or</span>
+              <div className="flex-grow border-t border-slate-200"></div>
+            </div>
+            <button
+              type="button"
+              onClick={handleQuickCitizenLogin}
+              disabled={loading}
+              className="btn-ghost !border-dashed !border-slate-300 w-full flex items-center justify-center gap-2 hover:!bg-slate-50 transition"
+            >
+              ⚡ Instant Entry (Andheri West Ward 14)
+            </button>
             <p className="text-center text-[10px] text-slate-400 mt-3 px-4 leading-tight">
-              By continuing, you will be prompted to grant location access to align the map with your physical neighborhood.
+              By entering, the map will align with your registered physical neighborhood.
             </p>
           </form>
         ) : (
