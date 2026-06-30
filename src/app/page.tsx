@@ -99,10 +99,15 @@ export default function CitizenHome() {
           <div className="flex items-center gap-4 bg-white/90 backdrop-blur-md border border-white/20 p-4 rounded-xl shadow-2xl pointer-events-auto text-slate-800">
             <div>
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Citizen Health Score</div>
-              <div className="text-3xl font-black text-slate-800 flex items-end gap-2 leading-none">
-                73% <span className="text-sm font-bold text-emerald-600 mb-1">↑</span>
+              <div className="text-3xl font-black text-slate-800 flex items-end gap-1.5 leading-none">
+                {analytics?.totals.healthScore ?? "73"}%
+                <span className="text-xs font-bold text-emerald-600 mb-0.5">
+                  {analytics && analytics.totals.healthScore >= 75 ? "↑" : "→"}
+                </span>
               </div>
-              <div className="text-xs text-slate-600 font-medium mt-1">Neighborhood is improving</div>
+              <div className="text-xs text-slate-600 font-medium mt-1">
+                {analytics && analytics.totals.healthScore >= 75 ? "Neighborhood is improving" : "Stable ward performance"}
+              </div>
             </div>
             <div className="w-px h-12 bg-slate-200 mx-2" />
             <div className="flex -space-x-2">

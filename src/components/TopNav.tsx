@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 import { Activity, RotateCcw } from "lucide-react";
 import { api } from "@/lib/client";
 
@@ -39,9 +40,13 @@ export default function TopNav() {
     <header className="sticky top-0 z-[1000] border-b border-slate-200/70 bg-white/80 backdrop-blur">
       <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center gap-2 px-3 py-2 sm:flex-nowrap sm:gap-4 sm:px-4 sm:py-0">
         <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-600 text-white shadow-sm">
-            <Activity size={18} />
-          </span>
+          <Image
+            src="/assets/icons/app_icon.png"
+            alt="CivicPulse Logo"
+            width={32}
+            height={32}
+            className="rounded-xl object-contain shadow-sm border border-slate-200/40"
+          />
           <span className="text-base font-extrabold tracking-tight">
             Civic<span className="text-brand-600">Pulse</span>
           </span>

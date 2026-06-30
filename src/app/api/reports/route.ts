@@ -3,7 +3,10 @@ import {
   applyClassification,
   createReport,
   listReports,
+  prisma,
+  getCurrentUser,
 } from "@/lib/store";
+import { detectDuplicateReport } from "@/lib/ai";
 import type { AiMetadata, ReportStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +57,60 @@ export async function POST(req: Request) {
 
   if (typeof lat !== "number" || typeof lng !== "number") {
     return NextResponse.json({ error: "lat/lng required" }, { status: 400 });
+  }
+
+  // Autonomous Duplicate Detection Agent
+  const existingOpenReports = await listReports({
+    status: ["PENDING_VERIFICATION", "VERIFIED", "ROUTED", "ACKNOWLEDGED", "IN_PROGRESS", "RESOLVED_PENDING_CONFIRM", "ESCALATED"],
+    wardId: wardId || undefined,
+  });
+
+  const categoryToCheck = ai?.category || "OTHER";
+  const duplicateCheck = await detectDuplicateReport(
+    {
+      title: titleOverride || ai?.suggested_title || "Civic report",
+      description: descriptionOverride || description || "",
+      category: categoryToCheck,
+      lat,
+      lng,
+    },
+    existingOpenReports
+  );
+
+  if (duplicateCheck.isDuplicate && duplicateCheck.duplicateReportId) {
+    const dupId = duplicateCheck.duplicateReportId;
+    const existing = await prisma.report.findUnique({ where: { id: dupId } });
+    if (existing) {
+      const reporter = await getCurrentUser();
+      await prisma.report.update({
+        where: { id: dupId },
+        data: {
+          upvoteCount: existing.upvoteCount + 1,
+          duplicateCount: existing.duplicateCount + 1,
+        },
+      });
+
+      await prisma.reportEvent.create({
+        data: {
+          reportId: dupId,
+          type: "MERGED",
+          actorType: "SYSTEM",
+          label: `Agent merged duplicate claim by ${reporter.name}. Action: Upvote and merge incremented. ${duplicateCheck.reason}`,
+          at: new Date(),
+        },
+      });
+
+      const updatedExisting = await listReports({ status: undefined }).then((list) =>
+        list.find((r) => r.id === dupId)
+      );
+
+      return NextResponse.json({
+        isDuplicate: true,
+        duplicateReportId: dupId,
+        reason: duplicateCheck.reason,
+        report: updatedExisting,
+      }, { status: 200 });
+    }
   }
 
   const report = await createReport({

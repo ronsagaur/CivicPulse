@@ -112,8 +112,24 @@ export default function LoginPage() {
     }
   };
 
+  const [resetting, setResetting] = useState(false);
+
+  const handleResetSystem = async () => {
+    if (confirm("Are you sure you want to clear all custom reports and reset the system database?")) {
+      setResetting(true);
+      try {
+        await fetch("/api/reset", { method: "POST" });
+        alert("System successfully reset to default seed state!");
+      } catch (err) {
+        alert("Failed to reset system. Please try again.");
+      } finally {
+        setResetting(false);
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="card w-full max-w-md p-8 animate-fade-in relative z-10">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold font-serif-header text-slate-800">
@@ -247,6 +263,25 @@ export default function LoginPage() {
             </button>
           </div>
         )}
+      </div>
+
+      {/* System Reset Trigger */}
+      <div className="mt-4 text-center z-10">
+        <button
+          onClick={handleResetSystem}
+          disabled={resetting}
+          className="text-[10px] text-slate-400 hover:text-slate-600 font-bold transition flex items-center justify-center gap-1 mx-auto"
+        >
+          {resetting ? (
+            <>
+              <Loader2 size={10} className="animate-spin" /> Resetting database...
+            </>
+          ) : (
+            <>
+              🔄 Clear Database &amp; Reload Seed State
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
