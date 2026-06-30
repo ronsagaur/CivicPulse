@@ -5,7 +5,7 @@
   "description": "AI-powered civic accountability platform — report, verify, route, resolve, re-verify.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/use-postgres.js && next build && node scripts/use-sqlite.js",
     "start": "next start",
     "lint": "next lint"
   },

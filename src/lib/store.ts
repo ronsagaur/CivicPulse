@@ -752,6 +752,13 @@ import { runSeed } from "../../prisma/seed";
 // ── Reset ───────────────────────────────────────────────────────
 export async function resetStore() {
   console.log("[CivicPulse Reset] Database reset initiated programmatically...");
+  try {
+    const { execSync } = await import("child_process");
+    console.log("[CivicPulse Reset] Pushing Prisma schema to SQLite database...");
+    execSync("npx prisma db push --accept-data-loss", { stdio: "inherit" });
+  } catch (err) {
+    console.error("[CivicPulse Reset] Failed to push schema during reset:", err);
+  }
   await runSeed(prisma);
   console.log("[CivicPulse Reset] Database reset successful.");
 }
