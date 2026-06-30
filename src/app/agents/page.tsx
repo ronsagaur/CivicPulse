@@ -6,8 +6,31 @@ import { usePolling } from "@/lib/client";
 import type { Report } from "@/lib/types";
 
 export default function AgentControlCenter() {
-  const { data: reportData } = usePolling<{ reports: Report[] }>("/api/reports", 2000);
+  const { data: reportData, refresh } = usePolling<{ reports: Report[] }>("/api/reports", 2000);
   const reports = reportData?.reports ?? [];
+  const [busy, setBusy] = useState(false);
+  const [watchdogResult, setWatchdogResult] = useState<{ escalated: number; processed: number } | null>(null);
+
+  const runWatchdog = async () => {
+    setBusy(true);
+    setWatchdogResult(null);
+    try {
+      const res = await fetch("/api/agents/sla-watchdog", { method: "POST" });
+      const json = await res.json();
+      setWatchdogResult({
+        processed: json.processed || 0,
+        escalated: json.escalated || 0
+      });
+      refresh();
+      setTimeout(() => {
+        setWatchdogResult(null);
+      }, 6000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   // Extract all SYSTEM agent decisions from database reports
   const agentLogs = reports
@@ -30,14 +53,29 @@ export default function AgentControlCenter() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
+          <h1 className="text-xl font-extrabold tracking-tight flex items-center gap-2 font-serif-header">
             <Cpu className="text-brand-600" size={24} /> AI Agent Control Center
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-xs text-slate-500">
             Monitor the autonomous intake, routing, and escalation loops of Andheri West
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {watchdogResult && (
+            <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl animate-fade-in font-bold">
+              Watchdog analyzed {watchdogResult.processed} tickets, escalated {watchdogResult.escalated} SLA breaches!
+            </span>
+          )}
+          <button
+            onClick={runWatchdog}
+            disabled={busy}
+            className={`btn-primary !px-3 !py-2 text-xs flex items-center gap-1.5 shadow-md ${
+              busy ? "opacity-75 cursor-not-allowed" : ""
+            }`}
+          >
+            <Activity className={busy ? "animate-spin" : ""} size={13} />
+            {busy ? "Watchdog Analyzing..." : "Run SLA Watchdog"}
+          </button>
           <span className="chip bg-brand-50 text-brand-700 ring-brand-200 flex items-center gap-1">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             Agent Network Online

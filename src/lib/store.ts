@@ -12,6 +12,10 @@ import type {
 } from "./types";
 import { AiMetadata } from "./types";
 import {
+  chooseEscalationToolCall,
+  chooseRoutingToolCall,
+} from "./ai";
+import {
   TRUST_DELTAS,
   applyTrustDelta,
   bandFor,
@@ -392,18 +396,46 @@ export async function applyClassification(
   return (await getReport(id))!;
 }
 
-async function routeReport(id: string, category: string, wardId: string) {
-  const depts = await prisma.department.findMany({ where: { wardId } });
-  const dept = depts.find((d) =>
-    d.handlesCategories.split(",").includes(category)
+async function routeReport(id: string) {
+  const report = await getReport(id);
+  if (!report) return;
+  const depts = await getDepartments();
+  const wardDepts = depts.filter((d) => d.wardId === report.wardId);
+  const toolCall = await chooseRoutingToolCall(report, wardDepts);
+
+  if (toolCall.name !== "routeToDepartment") {
+    await addEvent(id, "ROUTING_SKIPPED", "SYSTEM", "Agent did not return a routing tool call");
+    return;
+  }
+
+  await routeToDepartment(
+    String(toolCall.args.reportId || id),
+    String(toolCall.args.departmentId || ""),
+    Number(toolCall.args.urgencyLevel || report.severity),
+    typeof toolCall.args.reason === "string" ? toolCall.args.reason : undefined
   );
+}
+
+export async function routeToDepartment(
+  reportId: string,
+  departmentId: string,
+  urgencyLevel: number,
+  reason?: string
+) {
+  const report = await prisma.report.findUnique({ where: { id: reportId } });
+  if (!report) return undefined;
+  const dept = departmentId
+    ? await prisma.department.findUnique({ where: { id: departmentId } })
+    : null;
 
   if (dept) {
-    const slaDeadline = new Date(
-      Date.now() + dept.defaultSlaHours * 3600 * 1000
-    );
+    const normalizedUrgency = Math.max(1, Math.min(5, Math.round(urgencyLevel)));
+    const urgencyMultiplier = normalizedUrgency >= 5 ? 0.5 : normalizedUrgency >= 4 ? 0.75 : 1;
+    const slaHours = Math.max(1, Math.round(dept.defaultSlaHours * urgencyMultiplier));
+    const slaDeadline = new Date(Date.now() + slaHours * 3600 * 1000);
+
     await prisma.report.update({
-      where: { id },
+      where: { id: reportId },
       data: {
         status: "ROUTED",
         routedToDepartmentId: dept.id,
@@ -412,19 +444,22 @@ async function routeReport(id: string, category: string, wardId: string) {
     });
 
     await addEvent(
-      id,
+      reportId,
       "ROUTED",
       "SYSTEM",
-      `Routed to ${dept.shortName} · SLA ${dept.defaultSlaHours}h`
+      `Agent routed to ${dept.shortName} · urgency ${normalizedUrgency}/5 · SLA ${slaHours}h${reason ? ` · ${reason}` : ""}`
     );
   } else {
     await prisma.report.update({
-      where: { id },
+      where: { id: reportId },
       data: { status: "ROUTED" },
     });
-    await addEvent(id, "ROUTED", "SYSTEM", "Queued for manual routing");
+    await addEvent(reportId, "ROUTED", "SYSTEM", "Agent queued this for manual routing");
   }
+
+  return (await getReport(reportId))!;
 }
+
 
 export async function verifyReport(
   id: string,
@@ -485,7 +520,7 @@ export async function verifyReport(
     });
     await addEvent(id, "VERIFIED", "SYSTEM", `${confirms} neighbours confirmed — verified`);
     await bumpTrust(r.reporterId, TRUST_DELTAS.REPORT_VERIFIED);
-    await routeReport(id, r.category, r.wardId);
+    await routeReport(id);
   } else if (rejects >= 2) {
     await prisma.report.update({
       where: { id },
@@ -637,31 +672,37 @@ export async function confirmResolution(
     await bumpTrust(confirmer.id, TRUST_DELTAS.CONFIRMED_RESOLUTION_MATCH);
   } else {
     // STILL_BROKEN or PARTIALLY_FIXED → reopen and escalate
-    await reopenAndEscalate(
-      id,
-      r.routedToDepartmentId || undefined,
-      r.escalationLevel,
+    const reason =
       verdict === "PARTIALLY_FIXED"
         ? `${confirmer.name} says only partially fixed`
-        : `${confirmer.name} says it's still broken`
+        : `${confirmer.name} says it's still broken`;
+    const reportForAgent = await getReport(id);
+    const toolCall = reportForAgent
+      ? await chooseEscalationToolCall(reportForAgent, reason)
+      : null;
+    await escalateTicket(
+      String(toolCall?.args.reportId || id),
+      typeof toolCall?.args.reason === "string" ? toolCall.args.reason : reason
     );
   }
 
   return (await getReport(id))!;
 }
 
-async function reopenAndEscalate(
-  id: string,
-  routedToDepartmentId: string | undefined,
-  currentEscalationLevel: number,
+export async function escalateTicket(
+  reportId: string,
   reason: string
-) {
-  const nextEscalation = currentEscalationLevel + 1;
+): Promise<Report | undefined> {
+  const report = await prisma.report.findUnique({ where: { id: reportId } });
+  if (!report) return undefined;
+
+  const id = reportId;
+  const nextEscalation = report.escalationLevel + 1;
 
   let escalateToId: string | null = null;
-  if (routedToDepartmentId) {
+  if (report.routedToDepartmentId) {
     const currentDept = await prisma.department.findUnique({
-      where: { id: routedToDepartmentId },
+      where: { id: report.routedToDepartmentId },
     });
     escalateToId = currentDept?.escalationToDepartmentId || null;
   }
@@ -672,7 +713,7 @@ async function reopenAndEscalate(
       status: "ESCALATED",
       escalationLevel: nextEscalation,
       resolvedAt: null,
-      routedToDepartmentId: escalateToId || routedToDepartmentId,
+      routedToDepartmentId: escalateToId || report.routedToDepartmentId,
     },
   });
 
@@ -696,13 +737,14 @@ async function reopenAndEscalate(
       "Auto-escalated to next authority level + publicly flagged"
     );
   }
+
+  return (await getReport(reportId))!;
 }
 
 export async function reopenReport(id: string): Promise<Report | undefined> {
   const r = await prisma.report.findUnique({ where: { id } });
   if (!r) return undefined;
-  await reopenAndEscalate(id, r.routedToDepartmentId || undefined, r.escalationLevel, "manually reopened");
-  return (await getReport(id))!;
+  return escalateTicket(id, "manually reopened");
 }
 
 // ── Reset ───────────────────────────────────────────────────────

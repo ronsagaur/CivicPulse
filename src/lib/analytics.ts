@@ -48,6 +48,7 @@ export interface AnalyticsSummary {
     resolutionRate: number;
     avgResolutionHours: number | null;
     slaBreaches: number;
+    healthScore: number;
   };
   wards: WardStat[];
   categories: Array<{ category: IssueCategory; label: string; emoji: string; count: number }>;
@@ -137,6 +138,9 @@ export async function computeAnalytics(): Promise<AnalyticsSummary> {
       +new Date(r.slaDeadline) < now
   ).length;
 
+  const rawHealth = 78 - (active * 1.5) - (slaBreaches * 5) + (resolved * 2);
+  const healthScore = Math.max(45, Math.min(98, Math.round(rawHealth)));
+
   const ranked = [...wardStats].sort(
     (a, b) => b.resolutionRate - a.resolutionRate
   );
@@ -149,6 +153,7 @@ export async function computeAnalytics(): Promise<AnalyticsSummary> {
       resolutionRate: reported ? Math.round((resolved / reported) * 100) : 0,
       avgResolutionHours: avgHours(all),
       slaBreaches,
+      healthScore,
     },
     wards: wardStats,
     categories,

@@ -21,58 +21,14 @@ interface PredictionData {
   points: number[];
 }
 
-const WARD_PREDICTIONS: Record<string, PredictionData> = {
-  "ward-14": {
-    riskScore: 78,
-    level: "High",
-    tone: "red",
-    insights: [
-      "Heavy monsoon cycles predicted for July 3-8 are 88% likely to trigger +180% pothole expansion on MG Road.",
-      "Veera Desai Road drainage networks show 82% risk of sewage overflow due to pre-monsoon silt accumulation.",
-      "Recommend proactive drain cleaning before July 10 to avert flood water logging.",
-    ],
-    points: [30, 32, 45, 58, 72, 85, 78, 65, 52, 48, 55, 62, 70, 75, 78],
-  },
-  "ward-9": {
-    riskScore: 42,
-    level: "Moderate",
-    tone: "amber",
-    insights: [
-      "Salinity winds near Carter Road pose a 65% risk of accelerated corrosion and failure on 12 coastal streetlights.",
-      "Water main pipelines are operating under normal pressures; low risk of burst leakages (<10%).",
-      "Recommend scheduling anti-corrosion coating for beachfront street pole bases.",
-    ],
-    points: [15, 18, 22, 25, 20, 18, 24, 30, 35, 38, 42, 35, 28, 22, 20],
-  },
-  "ward-21": {
-    riskScore: 58,
-    level: "Moderate",
-    tone: "amber",
-    insights: [
-      "Water pipeline stress indices near Lake Road are rising; 55% risk of joints leaking due to supply surges.",
-      "Garbage accumulation frequencies show steady patterns; default collection truck schedules are currently optimal.",
-      "Recommend pressure valve adjustments at Lake Road pumping station.",
-    ],
-    points: [25, 28, 30, 32, 38, 45, 48, 52, 58, 55, 48, 42, 38, 35, 30],
-  },
-  "ward-5": {
-    riskScore: 88,
-    level: "High",
-    tone: "red",
-    insights: [
-      "Critical solid waste accumulation peak predicted at slum gate intersections due to inadequate bin capacities.",
-      "Exposed electrical cable junctions near low-lying waterlogged lanes pose a 92% public hazard risk during rainfall.",
-      "Recommend immediate deployment of 2 mobile refuse compactors and immediate wire insulation audits.",
-    ],
-    points: [50, 55, 68, 72, 80, 85, 88, 88, 85, 80, 75, 72, 70, 68, 65],
-  },
-};
-
 export default function PublicLedger() {
   const { data } = usePolling<AnalyticsSummary>("/api/analytics", 4000);
   const [selectedWardId, setSelectedWardId] = useState("ward-14");
 
-  const activePrediction = WARD_PREDICTIONS[selectedWardId] || WARD_PREDICTIONS["ward-14"];
+  const { data: activePrediction } = usePolling<PredictionData>(
+    `/api/analytics/predictive-forecast?wardId=${selectedWardId}`,
+    5000
+  );
 
   return (
     <div className="animate-fade-in space-y-8 max-w-7xl mx-auto px-1 py-2">
@@ -132,39 +88,56 @@ export default function PublicLedger() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3 items-start">
-          {/* Left Column: Risk Gauge & Chart */}
-          <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <span className={`chip ring-1 font-bold ${
-                activePrediction.tone === "red"
-                  ? "bg-rose-50 text-rose-700 ring-rose-200"
-                  : "bg-amber-50 text-amber-700 ring-amber-200"
-              }`}>
-                Risk Level: {activePrediction.level} ({activePrediction.riskScore}/100)
-              </span>
-              <span className="text-xs text-slate-400">Projected 30-Day Failure Probability Curve</span>
-            </div>
-            
-            {/* Custom SVG Line Chart */}
-            <div className="h-40 w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50/50 p-2 flex items-center justify-center">
-              <PredictionChart points={activePrediction.points} tone={activePrediction.tone} />
+        {!activePrediction ? (
+          <div className="h-48 grid place-items-center text-slate-400 text-xs py-10">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+              <span className="font-semibold text-slate-500">Intelligent predictive engine compiling risk models...</span>
             </div>
           </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-3 items-start">
+            {/* Left Column: Risk Gauge & Chart */}
+            <div className="md:col-span-2 space-y-4">
+              <div className="flex items-center gap-3">
+                <span className={`chip ring-1 font-bold ${
+                  activePrediction.tone === "red"
+                    ? "bg-rose-50 text-rose-700 ring-rose-200"
+                    : activePrediction.tone === "green"
+                    ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                    : "bg-amber-50 text-amber-700 ring-amber-200"
+                }`}>
+                  Risk Level: {activePrediction.level} ({activePrediction.riskScore}/100)
+                </span>
+                <span className="text-xs text-slate-400">Projected 30-Day Failure Probability Curve</span>
+              </div>
+              
+              {/* Custom SVG Line Chart */}
+              <div className="h-40 w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50/50 p-2 flex items-center justify-center">
+                <PredictionChart points={activePrediction.points} tone={activePrediction.tone} />
+              </div>
+            </div>
 
-          {/* Right Column: AI Insights list */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Agent Projections</h3>
-            <div className="space-y-2">
-              {activePrediction.insights.map((insight, idx) => (
-                <div key={idx} className="flex gap-2 text-xs text-slate-600 leading-relaxed bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm">
-                  <AlertCircle size={14} className={`shrink-0 mt-0.5 ${activePrediction.tone === "red" ? "text-rose-500" : "text-amber-500"}`} />
-                  <span>{insight}</span>
-                </div>
-              ))}
+            {/* Right Column: AI Insights list */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Agent Projections</h3>
+              <div className="space-y-2">
+                {activePrediction.insights.map((insight, idx) => (
+                  <div key={idx} className="flex gap-2 text-xs text-slate-600 leading-relaxed bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm">
+                    <AlertCircle size={14} className={`shrink-0 mt-0.5 ${
+                      activePrediction.tone === "red"
+                        ? "text-rose-500"
+                        : activePrediction.tone === "green"
+                        ? "text-emerald-500"
+                        : "text-amber-500"
+                    }`} />
+                    <span>{insight}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Top / bottom wards */}

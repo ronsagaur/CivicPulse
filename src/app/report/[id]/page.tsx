@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ThumbsUp,
@@ -13,6 +13,9 @@ import {
   Building2,
   Users,
   Copy,
+  Zap,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import { api, usePolling } from "@/lib/client";
 import {
@@ -75,12 +78,31 @@ export default function ReportDetail() {
     }
   }
 
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = () => {
+    const shareData = {
+      title: `CivicPulse Report: ${r.title}`,
+      text: `Check out report ${r.id} at ${r.addressText} on CivicPulse. Let's get it resolved!`,
+      url: window.location.href,
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      navigator.share(shareData).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-2xl animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
         <BackLink href="/" label="Map" />
-        <button className="btn-ghost !px-3 !py-1.5 text-xs">
-          <Share2 size={14} /> Share
+        <button onClick={handleShare} className="btn-ghost !px-3 !py-1.5 text-xs flex items-center gap-1.5">
+          <Share2 size={14} className={copied ? "text-emerald-500" : ""} />
+          {copied ? "Link Copied!" : "Share"}
         </button>
       </div>
 
@@ -210,37 +232,7 @@ export default function ReportDetail() {
       <ActionZone report={r} busy={busy} act={act} />
 
       {/* Automated Community Petition */}
-      {r.upvoteCount >= 5 && (
-        <div className="card p-4 border-amber-200 bg-gradient-to-br from-amber-50/20 to-white relative overflow-hidden">
-          <div className="flex items-center justify-between border-b border-amber-100/50 pb-2 mb-3">
-            <h2 className="text-xs font-extrabold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
-              📜 Automated Community Petition
-            </h2>
-            <span className="chip bg-amber-500 text-white font-mono text-[9px] px-1.5 py-0 border-none">
-              Active ({r.upvoteCount} Signatures)
-            </span>
-          </div>
-          
-          <div className="rounded-xl border border-slate-100 bg-white/70 p-3 text-xs text-slate-600 font-serif leading-relaxed shadow-sm">
-            <p className="font-extrabold text-slate-800 mb-2">MEMORANDUM OF GRIEVANCE</p>
-            <p className="mb-1.5"><strong>TO:</strong> Municipal Corporator &amp; MLA, Andheri West Ward 14</p>
-            <p className="mb-2">We, the undersigned residents, formally petition for immediate structural remediation regarding: <strong className="font-sans text-slate-800">{r.title}</strong> (ID: {r.id}). This issue represents a documented severity level of {r.severity}/5, representing a hazard to neighborhood safety.</p>
-            <div className="border-t border-dashed border-slate-200 pt-2 flex items-center justify-between font-sans text-[10px] text-slate-400">
-              <span>Verified local signatures: <strong>{r.upvoteCount}</strong></span>
-              <span>Authentication: Civic consensus ledger ✓</span>
-            </div>
-          </div>
-
-          <div className="mt-3 flex gap-2">
-            <button
-              onClick={() => alert(`Official petition for ${r.id} successfully compiled and routed to Ward MLA and Local Corporator!`)}
-              className="btn-success w-full !text-xs !py-2 justify-center"
-            >
-              ✉️ Route Petition package to MLA
-            </button>
-          </div>
-        </div>
-      )}
+      {r.upvoteCount >= 5 && <PetitionCard report={r} />}
 
       {/* The Visual Journey Timeline */}
       <div className="card p-6 bg-gradient-to-b from-white to-slate-50">
@@ -282,8 +274,22 @@ export default function ReportDetail() {
                   
                   {/* Event Card */}
                   <div className={`ml-8 flex-1 rounded-2xl p-4 shadow-sm border bg-white ${isFirst ? 'border-slate-200 shadow-md' : 'border-slate-100'}`}>
-                    <div className="font-extrabold text-slate-800 text-sm mb-1">{e.label}</div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-wide uppercase text-slate-400">
+                    {(() => {
+                      const parts = e.label.split(" · ");
+                      const mainLabel = parts[0];
+                      const reasonTrace = parts.slice(1).join(" · ");
+                      return (
+                        <>
+                          <div className="font-extrabold text-slate-800 text-sm mb-1">{mainLabel}</div>
+                          {reasonTrace && (
+                            <div className="mt-2 text-xs border-l-2 border-brand-500 bg-brand-50/40 p-2.5 rounded-r-lg font-semibold text-slate-600 italic leading-relaxed">
+                              🤖 Agent Reasoning: {reasonTrace}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-wide uppercase text-slate-400 mt-2">
                       <span>{e.actorType}</span>
                       <span>·</span>
                       <span>{timeAgo(e.at)}</span>
@@ -312,6 +318,118 @@ export default function ReportDetail() {
           Open authority view →
         </Link>
       </div>
+    </div>
+  );
+}
+
+function PetitionCard({ report }: { report: Report }) {
+  const [draft, setDraft] = useState<{
+    subject: string;
+    body: string;
+    source: "live" | "mock";
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    api<{ petition: { subject: string; body: string; source: "live" | "mock" } }>(
+      `/api/reports/${report.id}/draft-petition`,
+      { method: "POST" }
+    )
+      .then((res) => {
+        if (!cancelled) setDraft(res.petition);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [report.id, report.upvoteCount, report.severity]);
+
+  const bodyLines = (draft?.body || "Drafting formal petition...").split("\n");
+  const [routedReceipt, setRoutedReceipt] = useState(false);
+
+  return (
+    <div className="card p-4 border-amber-200 bg-gradient-to-br from-amber-50/20 to-white relative overflow-hidden">
+      <div className="flex items-center justify-between border-b border-amber-100/50 pb-2 mb-3">
+        <h2 className="text-xs font-extrabold text-amber-800 uppercase tracking-wide flex items-center gap-1.5 font-serif-header">
+          Dynamic Community Petition
+        </h2>
+        <span className="chip bg-amber-500 text-white font-mono text-[9px] px-1.5 py-0 border-none">
+          Active ({report.upvoteCount} Signatures)
+        </span>
+      </div>
+
+      <div className="rounded-xl border border-slate-100 bg-white/70 p-3 text-xs text-slate-600 font-serif leading-relaxed shadow-sm">
+        <p className="font-extrabold text-slate-800 mb-2">
+          {loading && !draft ? "DRAFTING PETITION" : draft?.subject}
+        </p>
+        <div className="space-y-2 whitespace-pre-wrap">
+          {bodyLines.map((line, index) => (
+            <p key={`${report.id}-petition-${index}`}>{line || "\u00a0"}</p>
+          ))}
+        </div>
+        <div className="border-t border-dashed border-slate-200 pt-2 mt-3 flex items-center justify-between font-sans text-[10px] text-slate-400">
+          <span>
+            Verified local signatures: <strong>{report.upvoteCount}</strong>
+          </span>
+          <span>Draft source: {draft?.source === "live" ? "Gemini" : "local fallback"}</span>
+        </div>
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={() => setRoutedReceipt(true)}
+          className="btn-success w-full !text-xs !py-2.5 justify-center font-bold shadow-md"
+        >
+          Route Petition package to Corporator
+        </button>
+      </div>
+
+      {/* Glassmorphic Petition Receipt Modal Overlay */}
+      {routedReceipt && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 animate-fade-in pointer-events-auto">
+          <div className="card max-w-sm w-full bg-white p-6 text-center border-none shadow-2xl relative">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-emerald-100 text-emerald-600 mb-3 shadow-inner">
+              <CheckCircle2 size={24} />
+            </div>
+            <h3 className="text-base font-extrabold text-slate-800 font-serif-header">Official Submission Receipt</h3>
+            <p className="text-[10px] text-slate-400 font-mono mt-0.5">TRANS-ID: RCP-{report.id}-PET</p>
+
+            <div className="mt-4 rounded-xl bg-slate-50 border border-slate-100 p-3.5 text-left text-xs text-slate-600 space-y-2 leading-relaxed font-sans">
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-semibold">Destination:</span>
+                <span className="font-bold text-slate-700">Office of the Corporator, Ward 14</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-semibold">Timestamp:</span>
+                <span className="font-bold text-slate-700">{new Date().toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-semibold">Verified Signatures:</span>
+                <span className="font-bold text-emerald-600">{report.upvoteCount} residents</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-semibold">Routing Agent:</span>
+                <span className="font-bold text-brand-600">Gemini Routing Agent 02</span>
+              </div>
+              <p className="text-[10px] text-slate-400 border-t border-dashed border-slate-200 pt-2 mt-2 leading-normal">
+                ✓ Package compiled including metadata audit logs, duplicate list, and severity metrics. Transmitted to municipal dashboard.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setRoutedReceipt(false)}
+              className="mt-5 btn-primary w-full py-2.5 justify-center font-bold text-xs"
+            >
+              Close Receipt
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -358,6 +476,16 @@ function ActionZone({
             className="btn-ghost"
           >
             <X size={15} /> Not real
+          </button>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-dashed border-brand-200/50">
+          <button
+            disabled={busy}
+            onClick={() => act(`/api/reports/${r.id}/simulate-consensus`, {}, "Simulated neighborhood consensus verifications!")}
+            className="btn-ghost !border-dashed !border-brand-200 w-full flex items-center justify-center gap-1.5 text-brand-700 hover:!bg-brand-50/50 text-xs font-bold"
+          >
+            <Zap size={14} className="text-brand-600 animate-pulse" /> Simulate Neighbor Consensus (3 confirmations)
           </button>
         </div>
       </div>
@@ -414,17 +542,29 @@ function ActionZone({
     r.status !== "REJECTED"
   ) {
     return (
-      <div className="card flex items-center justify-between p-4">
-        <div className="text-sm text-slate-600">
-          Affected by this too? Add your voice — it raises the severity.
+      <div className="space-y-3">
+        <div className="card flex items-center justify-between p-4">
+          <div className="text-sm text-slate-600">
+            Affected by this too? Add your voice — it raises the severity.
+          </div>
+          <button
+            disabled={busy}
+            onClick={() => act(`/api/reports/${r.id}/upvote`, undefined, "+1 — thanks for adding your voice.")}
+            className="btn-primary"
+          >
+            <ThumbsUp size={15} /> I have the same problem
+          </button>
         </div>
-        <button
-          disabled={busy}
-          onClick={() => act(`/api/reports/${r.id}/upvote`, undefined, "+1 — thanks for adding your voice.")}
-          className="btn-primary"
-        >
-          <ThumbsUp size={15} /> I have the same problem
-        </button>
+
+        {(r.status === "ROUTED" || r.status === "ACKNOWLEDGED" || r.status === "IN_PROGRESS") && (
+          <button
+            disabled={busy}
+            onClick={() => act(`/api/reports/${r.id}/simulate-breach`, {}, "SLA breached and ticket escalated!")}
+            className="btn-ghost !border-dashed !border-rose-200 w-full flex items-center justify-center gap-1.5 text-rose-700 hover:!bg-rose-50/30 text-xs font-bold"
+          >
+            <Clock size={14} className="text-rose-600" /> Fast-forward SLA (Simulate Breach)
+          </button>
+        )}
       </div>
     );
   }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Camera,
   Sparkles,
@@ -13,6 +13,7 @@ import {
   Upload,
   Video,
   X,
+  Brain,
 } from "lucide-react";
 import { api } from "@/lib/client";
 import {
@@ -48,14 +49,41 @@ export default function ReportFlow() {
   const [anon, setAnon] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<Report | null>(null);
+  const [duplicateMerged, setDuplicateMerged] = useState<{ id: string; reason: string } | null>(null);
 
   const isVideo = mediaType?.startsWith("video/");
 
-  // a stable-ish location for the new report (near ward 14)
-  const loc = useMemo(
-    () => ({ lat: 19.1197 + (Math.random() - 0.5) * 0.01, lng: 72.8468 + (Math.random() - 0.5) * 0.01 }),
-    []
-  );
+  const [gpsLoc, setGpsLoc] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setGpsLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => {},
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
+
+  const loc = useMemo(() => {
+    if (gpsLoc) return gpsLoc;
+    return { lat: 19.1197 + (Math.random() - 0.5) * 0.006, lng: 72.8468 + (Math.random() - 0.5) * 0.006 };
+  }, [gpsLoc]);
+
+  const address = useMemo(() => {
+    const landmarks = [
+      "Veera Desai Road, near Sports Club, Andheri West",
+      "Link Road, opposite City Mall, Andheri West",
+      "Juhu Tara Road, near Sun & Sand, Juhu",
+      "S V Road, near Railway Station, Andheri West",
+      "JP Road, opposite Metro Station, Andheri West",
+      "Lallubhai Park Road, near post office, Andheri West"
+    ];
+    const index = Math.abs(Math.floor((loc.lat + loc.lng) * 100000)) % landmarks.length;
+    return landmarks[index];
+  }, [loc]);
 
   const instantPresetAnalysis = (cat: IssueCategory) => {
     setAnalyzing(true);
@@ -261,23 +289,35 @@ export default function ReportFlow() {
     if (!ai) return;
     setSubmitting(true);
     try {
-      const { report } = await api<{ report: Report }>("/api/reports", {
+      const res = await api<{
+        isDuplicate?: boolean;
+        duplicateReportId?: string;
+        reason?: string;
+        report: Report;
+      }>("/api/reports", {
         method: "POST",
         body: JSON.stringify({
           lat: loc.lat,
           lng: loc.lng,
           isAnonymous: anon,
-          addressText: "MG Road, near SV Junction, Andheri W",
+          addressText: address,
           wardId: "ward-14",
           ai,
           titleOverride: title,
           descriptionOverride: description,
           mediaType: isVideo ? "video" : "image",
-          mediaUrl: imageBase64 ? `data:${mediaType};base64,${imageBase64}` : undefined,
+          mediaUrl: imageBase64 ? (imageBase64.startsWith("/") ? imageBase64 : `data:${mediaType};base64,${imageBase64}`) : undefined,
         }),
       });
-      setCreated(report);
-      setStep(3);
+
+      if (res.isDuplicate) {
+        setDuplicateMerged({ id: res.duplicateReportId!, reason: res.reason! });
+        setCreated(res.report);
+        setStep(3);
+      } else {
+        setCreated(res.report);
+        setStep(3);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -490,8 +530,8 @@ export default function ReportFlow() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                  <MapPin size={14} /> MG Road, near SV Junction, Andheri W
+                <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 font-medium">
+                  <MapPin size={14} className="text-brand-500" /> {address}
                 </div>
 
                 <label className="flex items-center gap-2 text-sm text-slate-600">
@@ -527,43 +567,78 @@ export default function ReportFlow() {
         </div>
       )}
 
-      {/* STEP 3 — confirmation */}
       {step === 3 && created && (
-        <div className="card animate-fade-in p-6 text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100">
-            <CheckCircle2 className="text-emerald-600" size={36} />
-          </div>
-          <h1 className="mt-3 text-lg font-extrabold">Report submitted!</h1>
-          <p className="font-mono text-sm text-slate-500">{created.id}</p>
+        <div className="card animate-fade-in p-6 text-center shadow-xl border border-slate-200/60">
+          {duplicateMerged ? (
+            <>
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-50 border border-brand-100 shadow-inner">
+                <Sparkles className="text-brand-600 animate-pulse" size={30} />
+              </div>
+              <h1 className="mt-3 text-lg font-extrabold font-serif-header text-slate-800">Duplicate Claim Merged!</h1>
+              <p className="font-mono text-sm text-slate-500 font-bold mt-1">Merged into: {duplicateMerged.id}</p>
 
-          <div className="mt-4 rounded-xl bg-slate-50 p-4 text-left text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500">Status</span>
-              <span className="font-semibold">Awaiting verification</span>
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-slate-500">Neighbours notified</span>
-              <span className="font-semibold">8 nearby</span>
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-slate-500">Civic points</span>
-              <span className="font-semibold text-emerald-600">+50 🏆</span>
-            </div>
-          </div>
+              <div className="mt-4 rounded-xl bg-slate-50 p-4 text-left text-xs text-slate-600 space-y-2.5 leading-relaxed border border-slate-100">
+                <p className="font-bold text-slate-700 flex items-center gap-1.5">
+                  <Brain size={14} className="text-brand-500" /> Duplicate Detection Agent active
+                </p>
+                <p>
+                  An active ticket describing this exact issue was already reported in your vicinity. To preserve municipal repair crew resources, your ticket has been automatically merged.
+                </p>
+                <div className="p-2 border border-slate-200/60 rounded bg-white font-semibold text-slate-500">
+                  {duplicateMerged.reason}
+                </div>
+                <p className="text-[10px] text-brand-600 font-extrabold uppercase tracking-wide">
+                  ✓ Your upvote & evidence have been added to this ticket!
+                </p>
+              </div>
 
-          <p className="mt-3 text-xs text-slate-500">
-            Once 3 neighbours confirm, it&apos;s auto-routed to the right
-            department with a database SLA clock.
-          </p>
+              <div className="mt-5 flex flex-col gap-2">
+                <Link href={`/report/${duplicateMerged.id}`} className="btn-primary">
+                  Track open ticket →
+                </Link>
+                <Link href="/" className="btn-ghost">
+                  Back to map
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100">
+                <CheckCircle2 className="text-emerald-600" size={36} />
+              </div>
+              <h1 className="mt-3 text-lg font-extrabold">Report submitted!</h1>
+              <p className="font-mono text-sm text-slate-500">{created.id}</p>
 
-          <div className="mt-4 flex flex-col gap-2">
-            <Link href={`/report/${created.id}`} className="btn-primary">
-              Track this report →
-            </Link>
-            <Link href="/" className="btn-ghost">
-              Back to map
-            </Link>
-          </div>
+              <div className="mt-4 rounded-xl bg-slate-50 p-4 text-left text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Status</span>
+                  <span className="font-semibold">Awaiting verification</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-slate-500">Neighbours notified</span>
+                  <span className="font-semibold">8 nearby</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-slate-500">Civic points</span>
+                  <span className="font-semibold text-emerald-600">+50 🏆</span>
+                </div>
+              </div>
+
+              <p className="mt-3 text-xs text-slate-500">
+                Once 3 neighbours confirm, it&apos;s auto-routed to the right
+                department with a database SLA clock.
+              </p>
+
+              <div className="mt-4 flex flex-col gap-2">
+                <Link href={`/report/${created.id}`} className="btn-primary">
+                  Track this report →
+                </Link>
+                <Link href="/" className="btn-ghost">
+                  Back to map
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
