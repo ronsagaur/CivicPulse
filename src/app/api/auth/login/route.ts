@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     if (role === "AUTHORITY") {
       cookies().set("civicpulse_session", "AUTHORITY_SESSION", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 24 * 7, // 1 week
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
       cookies().set("civicpulse_session", user.id, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 24 * 7, // 1 week

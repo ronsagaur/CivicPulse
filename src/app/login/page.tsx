@@ -21,44 +21,59 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    let resolved = false;
+
+    const proceedWithLogin = async (lat: number, lng: number) => {
+      if (resolved) return;
+      resolved = true;
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            role: "CITIZEN",
+            name: name.trim(),
+            phone: phone.trim(),
+            homeLat: lat,
+            homeLng: lng,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          router.push(data.redirect);
+        } else {
+          setError(data.error || "Login failed.");
+          setLoading(false);
+        }
+      } catch (err) {
+        setError("Network error. Please try again.");
+        setLoading(false);
+      }
+    };
+
     if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser.");
-      setLoading(false);
+      await proceedWithLogin(19.1197, 72.8468);
       return;
     }
 
+    // Set a safety timeout of 5 seconds to prevent getting stuck if geolocation hangs
+    const safetyTimeout = setTimeout(() => {
+      console.warn("Geolocation request timed out. Falling back to default location.");
+      proceedWithLogin(19.1197, 72.8468);
+    }, 5000);
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        clearTimeout(safetyTimeout);
         const { latitude, longitude } = position.coords;
-        try {
-          const res = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              role: "CITIZEN",
-              name: name.trim(),
-              phone: phone.trim(),
-              homeLat: latitude,
-              homeLng: longitude,
-            }),
-          });
-          const data = await res.json();
-          if (data.success) {
-            router.push(data.redirect);
-          } else {
-            setError(data.error || "Login failed.");
-            setLoading(false);
-          }
-        } catch (err) {
-          setError("Network error. Please try again.");
-          setLoading(false);
-        }
+        await proceedWithLogin(latitude, longitude);
       },
-      (geoError) => {
-        setError("Location access is required for citizens.");
-        setLoading(false);
+      async (geoError) => {
+        clearTimeout(safetyTimeout);
+        console.warn("Geolocation failed. Falling back to default location:", geoError);
+        await proceedWithLogin(19.1197, 72.8468);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 0 }
     );
   };
 
