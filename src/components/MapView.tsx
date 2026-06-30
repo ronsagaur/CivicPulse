@@ -56,8 +56,8 @@ export default function MapView({
         zoomControl: true,
         scrollWheelZoom: true,
       });
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        attribution: "© OpenStreetMap © CARTO",
+      L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+        attribution: "© Google Maps",
         maxZoom: 20,
       }).addTo(map);
       layerRef.current = L.layerGroup().addTo(map);

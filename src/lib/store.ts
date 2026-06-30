@@ -710,7 +710,7 @@ export async function resetStore() {
   // Triggers seed re-population programmatically by running the main seed method logic
   const { exec } = require("child_process");
   return new Promise<void>((resolve, reject) => {
-    exec("npx prisma db push --force-reset && npx ts-node prisma/seed.ts", (err: any) => {
+    exec("npx prisma db push --force-reset && npx prisma db seed", (err: any) => {
       if (err) {
         console.error("[CivicPulse Reset] Database reset failed:", err);
         reject(err);
