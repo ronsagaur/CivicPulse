@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import "leaflet/dist/leaflet.css";
-import type { Report } from "@/lib/types";
+import { Loader } from "@googlemaps/js-api-loader";
+import type { Report, IssueCategory } from "@/lib/types";
 import { CATEGORY_META, STATUS_META } from "@/lib/types";
 
 function colorFor(status: Report["status"]): string {
@@ -39,92 +38,141 @@ export default function MapView({
   heat?: boolean;
 }) {
   const elRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const layerRef = useRef<any>(null);
-  const router = useRouter();
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const circlesRef = useRef<google.maps.Circle[]>([]);
 
-  // init once
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const L = (await import("leaflet")).default;
-      if (cancelled || !elRef.current || mapRef.current) return;
+    let active = true;
+    const loader = new Loader({
+      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+      version: "weekly",
+      libraries: ["places"],
+    });
 
-      const map = L.map(elRef.current, {
-        center: [center.lat, center.lng],
+    (loader as any).load().then(() => {
+      if (!active || !elRef.current || mapRef.current) return;
+
+      const map = new google.maps.Map(elRef.current, {
+        center: { lat: center.lat, lng: center.lng },
         zoom,
+        disableDefaultUI: false,
         zoomControl: true,
-        scrollWheelZoom: true,
+        streetViewControl: false,
+        mapTypeControl: false,
+        // Premium clean styling - hides busy POIs to make civic markers pop
+        styles: [
+          {
+            featureType: "poi",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }],
+          },
+          {
+            featureType: "transit",
+            elementType: "labels.icon",
+            stylers: [{ visibility: "off" }],
+          },
+          {
+            featureType: "road",
+            elementType: "labels.icon",
+            stylers: [{ visibility: "off" }],
+          },
+        ],
       });
-      L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
-        attribution: "© Google Maps",
-        maxZoom: 20,
-      }).addTo(map);
-      layerRef.current = L.layerGroup().addTo(map);
+
       mapRef.current = map;
-      renderMarkers(L);
-    })();
+      renderMarkers();
+    });
+
     return () => {
-      cancelled = true;
+      active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // re-render markers when data changes
+  // Re-render markers when data or heat layer changes
   useEffect(() => {
-    (async () => {
-      const L = (await import("leaflet")).default;
-      if (mapRef.current) renderMarkers(L);
-    })();
+    if (mapRef.current) {
+      renderMarkers();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reports, heat]);
 
-  async function renderMarkers(L: any) {
-    const layer = layerRef.current;
-    if (!layer) return;
-    layer.clearLayers();
+  function renderMarkers() {
+    const map = mapRef.current;
+    if (!map) return;
 
-    for (const r of reports) {
+    // Clear old markers
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+
+    // Clear old circles
+    circlesRef.current.forEach((c) => c.setMap(null));
+    circlesRef.current = [];
+
+    reports.forEach((r) => {
       const color = colorFor(r.status);
+      const meta = CATEGORY_META[r.category as IssueCategory] || CATEGORY_META.OTHER;
+
+      // Draw heat-radius overlays if enabled
       if (heat) {
-        L.circle([r.location.lat, r.location.lng], {
-          radius: 60 + r.severity * 55 + Math.min(r.upvoteCount, 40) * 6,
-          color,
-          weight: 0,
+        const circle = new google.maps.Circle({
+          strokeWeight: 0,
           fillColor: color,
-          fillOpacity: 0.18,
-        }).addTo(layer);
+          fillOpacity: 0.15,
+          map: map,
+          center: { lat: r.location.lat, lng: r.location.lng },
+          radius: 60 + r.severity * 50 + Math.min(r.upvoteCount, 30) * 5,
+        });
+        circlesRef.current.push(circle);
       }
-      const meta = CATEGORY_META[r.category];
-      const customIcon = L.icon({
-        iconUrl: meta.iconPath,
-        iconSize: [42, 42],
-        iconAnchor: [21, 42],
-        popupAnchor: [0, -38],
-        className: 'rounded-xl shadow-xl border-2 border-white bg-white transition-transform hover:scale-110 object-cover'
+
+      // Native Google Maps Marker with custom categories icon url
+      const marker = new google.maps.Marker({
+        position: { lat: r.location.lat, lng: r.location.lng },
+        map: map,
+        title: r.title,
+        icon: {
+          url: meta.iconPath,
+          scaledSize: new google.maps.Size(36, 36),
+          origin: new google.maps.Point(0, 0),
+          anchor: new google.maps.Point(18, 36),
+        },
       });
 
-      const marker = L.marker([r.location.lat, r.location.lng], {
-        icon: customIcon,
-      }).addTo(layer);
+      markersRef.current.push(marker);
 
-      marker.bindPopup(
-        `<div style="min-width:190px; font-family: var(--font-sans);">
-           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-             <img src="${meta.iconPath}" alt="${meta.label}" style="width: 24px; height: 24px; object-fit: contain;" />
-             <div style="font-weight:700; color:#1e1b18; font-size:13px;">${escapeHtml(r.title)}</div>
-           </div>
-           <div style="font-size:11px; color:#64748b">${escapeHtml(r.addressText)}</div>
-           <div style="font-size:11px; margin-top:6px; font-weight:600; color:#475569;">
-             ${STATUS_META[r.status].label} · Sev ${r.severity}
-           </div>
-           <a href="/report/${r.id}" style="display:inline-block; margin-top:8px; font-size:11px; font-weight:700; color:#c2593f; text-decoration: none;">
-             Track Audit Timeline →
-           </a>
-         </div>`
-      );
-      marker.on("click", () => marker.openPopup());
-    }
+      // Info Window containing ticket overview and tracking link
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div style="min-width:180px; font-family: system-ui, sans-serif; padding: 2px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span style="font-size: 18px;">${meta.emoji}</span>
+              <div style="font-weight: 800; color: #1e293b; font-size: 12px; line-height: 1.2;">
+                ${escapeHtml(r.title)}
+              </div>
+            </div>
+            <div style="font-size: 10px; color: #64748b; margin-bottom: 6px;">
+              📍 ${escapeHtml(r.addressText)}
+            </div>
+            <div style="font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+              ${STATUS_META[r.status].label} · Severity ${r.severity}/5
+            </div>
+            <a href="/report/${r.id}" style="display: inline-block; font-size: 10px; font-weight: 700; color: #2563eb; text-decoration: none; border: 1px solid #e2e8f0; padding: 4px 8px; border-radius: 6px; background-color: #f8fafc;">
+              Track Audit Timeline →
+            </a>
+          </div>
+        `,
+      });
+
+      marker.addListener("click", () => {
+        infoWindow.open({
+          anchor: marker,
+          map,
+          shouldFocus: false,
+        });
+      });
+    });
   }
 
   return (
