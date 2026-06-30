@@ -6,7 +6,7 @@ const HOUR = 3600 * 1000;
 const ago = (hours: number) => new Date(Date.now() - hours * HOUR);
 const ahead = (hours: number) => new Date(Date.now() + hours * HOUR);
 
-async function main() {
+export async function runSeed(prisma: PrismaClient) {
   // Clear tables
   await prisma.verification.deleteMany();
   await prisma.resolutionConfirmation.deleteMany();
@@ -353,6 +353,10 @@ async function main() {
   }
 
   console.log("Seeding complete!");
+}
+
+async function main() {
+  await runSeed(prisma);
 }
 
 main()

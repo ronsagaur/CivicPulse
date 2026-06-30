@@ -747,19 +747,11 @@ export async function reopenReport(id: string): Promise<Report | undefined> {
   return escalateTicket(id, "manually reopened");
 }
 
+import { runSeed } from "../../prisma/seed";
+
 // ── Reset ───────────────────────────────────────────────────────
 export async function resetStore() {
-  // Triggers seed re-population programmatically by running the main seed method logic
-  const { exec } = require("child_process");
-  return new Promise<void>((resolve, reject) => {
-    exec("npx prisma db push --force-reset && npx prisma db seed", (err: any) => {
-      if (err) {
-        console.error("[CivicPulse Reset] Database reset failed:", err);
-        reject(err);
-      } else {
-        console.log("[CivicPulse Reset] Database reset successful.");
-        resolve();
-      }
-    });
-  });
+  console.log("[CivicPulse Reset] Database reset initiated programmatically...");
+  await runSeed(prisma);
+  console.log("[CivicPulse Reset] Database reset successful.");
 }
