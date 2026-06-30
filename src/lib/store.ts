@@ -63,7 +63,7 @@ function formatDbReport(r: any): Report {
     addressText: r.addressText,
     wardId: r.wardId,
     aiConfidence: r.aiConfidence,
-    ai: r.aiMetadata ? JSON.parse(r.aiMetadata) : undefined,
+    ai: r.aiMetadata ? (() => { try { return JSON.parse(r.aiMetadata); } catch { return undefined; } })() : undefined,
     imagePlaceholder: r.imagePlaceholder,
     mediaType: r.mediaType as any,
     mediaUrl: r.mediaUrl,

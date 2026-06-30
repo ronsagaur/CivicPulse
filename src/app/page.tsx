@@ -13,16 +13,6 @@ import type { AnalyticsSummary } from "@/lib/analytics";
 
 const WARD_CENTER = { lat: 19.1197, lng: 72.8468 };
 
-const ARCH_NODES = [
-  { id: "citizen", label: "Citizen Mobile", tech: "Firebase Storage", icon: "📱", desc: "Citizen uploads images/videos. Firebase handles client verification, secure token authentication, and uploads media directly to encrypted Cloud Storage buckets." },
-  { id: "sentinel", label: "Sentinel Agent", tech: "Gemini 2.5 Flash", icon: "📷", desc: "Intake Sentinel scans imagery using multimodal Gemini APIs. Extracts incident categories, severity levels, visual quality scores, and flags potential visual fraud signals." },
-  { id: "dispatcher", label: "Dispatcher Agent", tech: "Gemini Tool Calling", icon: "⚡", desc: "Dispatcher processes verified reports. Uses Gemini function calling declarations to autonomously route reports to the responsible department with urgency-adjusted SLAs." },
-  { id: "authority", label: "Command Center", tech: "Cloud Run & Functions", icon: "🏛️", desc: "Municipal officers review and update ticket statuses. Google Cloud Functions and Cloud Run host the background workflows and schedule Coordinator Agent watchdog cycles." },
-  { id: "maps", label: "Spatial Maps", tech: "Google Maps SDK", icon: "🗺️", desc: "Renders real-time GPS markers, street boundaries, and a dynamic intensity heatmap showing neighborhood hazard clusters." },
-  { id: "ledger", label: "Public Ledger", tech: "Cloud SQL", icon: "🌐", desc: "Maintains an open, immutable audit ledger of all events. Every transition (reported, verified, routed, resolved, re-verified) is logged permanently." },
-  { id: "analytics", label: "Predictive Forecast", tech: "Vertex AI", icon: "🧠", desc: "Performs monsoon forecasting and ward health parity analysis, identifying neglected areas and computing the Neighborhood Health score." }
-];
-
 export default function CitizenHome() {
   const router = useRouter();
   const { data: reportData, refresh } = usePolling<{ reports: Report[] }>(
@@ -33,8 +23,6 @@ export default function CitizenHome() {
   const [me, setMe] = useState<AppUser | null>(null);
   const [allUsers, setAllUsers] = useState<AppUser[]>([]);
   const [heat, setHeat] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
-  const [activeArchNode, setActiveArchNode] = useState<string>("sentinel");
 
   const fetchMeta = () => {
     api<{ currentUser: AppUser; users: AppUser[] }>("/api/meta")
@@ -49,17 +37,10 @@ export default function CitizenHome() {
 
   useEffect(() => {
     fetchMeta();
-    try {
-      if (sessionStorage.getItem("civicpulse_intro_seen") !== "true") {
-        setShowIntro(true);
-      }
-    } catch {
-      // sessionStorage may be unavailable in some browsers/environments
-    }
   }, []);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
     router.push("/login");
   };
 
@@ -111,13 +92,6 @@ export default function CitizenHome() {
             <Link href="/report/new" className="btn-primary !bg-white/95 !text-slate-900 hover:!bg-white shadow-xl backdrop-blur-md !px-2.5 sm:!px-3 flex items-center gap-1 text-xs">
               <Plus size={14} /> Report
             </Link>
-            <button
-              onClick={() => setShowIntro(true)}
-              className="btn-ghost !bg-white/20 !border-white/20 !text-white hover:!bg-white/30 backdrop-blur-md !px-2.5 sm:!px-3 shadow-lg flex items-center gap-1 text-xs"
-              title="Replay Story Intro"
-            >
-              🎬 Intro
-            </button>
             <button onClick={handleLogout} className="btn-ghost !bg-white/20 !border-white/20 !text-white hover:!bg-white/30 backdrop-blur-md !px-2.5 sm:!px-3 shadow-lg text-xs" title="Log out">
               <LogOut size={14} />
             </button>
@@ -177,13 +151,7 @@ export default function CitizenHome() {
         </div>
       </div>
 
-      {/* Intro Splash Video/Animation Overlay */}
-      {showIntro && (
-        <IntroSplash onClose={() => {
-          setShowIntro(false);
-          sessionStorage.setItem("civicpulse_intro_seen", "true");
-        }} />
-      )}
+
 
       {/* Dynamic AI Civic Insight Bar */}
       {reports.length > 0 && (
@@ -438,97 +406,6 @@ export default function CitizenHome() {
         )}
       </div>
 
-      {/* Google Tech Integration Section */}
-      <div className="card p-6 bg-gradient-to-br from-slate-900 to-slate-950 border-slate-800 text-white mt-10 shadow-2xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-4 mb-6 gap-4">
-          <div>
-            <h2 className="text-sm font-extrabold uppercase tracking-widest text-brand-400 flex items-center gap-1.5 font-serif-header">
-              <Sparkles size={16} className="text-brand-400 animate-pulse" /> Google Technology Integration & System Architecture
-            </h2>
-            <p className="text-xs text-slate-400 font-semibold mt-0.5">
-              CivicPulse is built entirely on the Google Developer Stack, ensuring low latency, auto-scaling, and deep agentic intelligence.
-            </p>
-          </div>
-          <span className="chip bg-brand-500/10 text-brand-300 ring-brand-500/20 text-[10px] font-bold">Visible Architecture</span>
-        </div>
-
-        {/* Interactive Flow Diagram */}
-        <div className="bg-slate-950/60 rounded-xl p-4 border border-slate-800/80 mb-6">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-4 text-center">
-            Click any architecture stage to view Google SDK integration details
-          </div>
-          
-          <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-2 overflow-x-auto pb-2 scrollbar-thin">
-            {ARCH_NODES.map((node, idx) => {
-              const isActive = activeArchNode === node.id;
-              const isLast = idx === ARCH_NODES.length - 1;
-              return (
-                <div key={node.id} className="flex items-center flex-1 min-w-[120px]">
-                  <div
-                    onClick={() => setActiveArchNode(node.id)}
-                    className={`cursor-pointer rounded-xl p-2.5 text-center flex-1 transition duration-300 border ${
-                      isActive 
-                        ? "bg-brand-600 border-brand-400 text-white ring-4 ring-brand-500/20 scale-105" 
-                        : "bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300 hover:scale-102"
-                    }`}
-                  >
-                    <span className="text-xl block mb-1">{node.icon}</span>
-                    <div className="text-[10px] font-bold truncate">{node.label}</div>
-                    <div className={`text-[8px] font-bold mt-1 uppercase ${isActive ? "text-white" : "text-brand-400"}`}>
-                      {node.tech}
-                    </div>
-                  </div>
-                  {!isLast && (
-                    <span className="text-slate-700 font-bold px-1 hidden md:inline-block">→</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Active node detail panel */}
-          {(() => {
-            const activeNode = ARCH_NODES.find(n => n.id === activeArchNode) || ARCH_NODES[0];
-            return (
-              <div className="mt-4 bg-slate-900 border border-slate-800 p-4 rounded-xl animate-fade-in flex flex-col md:flex-row gap-4 items-start">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-800 border border-slate-700 text-2xl">
-                  {activeNode.icon}
-                </span>
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                    <span>{activeNode.label}</span>
-                    <span className="text-[9px] bg-brand-500/10 text-brand-300 px-2 py-0.5 rounded-full ring-1 ring-brand-500/25">
-                      Powered by {activeNode.tech}
-                    </span>
-                  </h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed mt-1.5 font-medium">
-                    {activeNode.desc}
-                  </p>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* Google Tech Grid Badges */}
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-8 text-center text-xs font-bold">
-          {[
-            { label: "Gemini API", desc: "Vision & Route", color: "from-blue-500/10 to-indigo-500/10 text-blue-300 border-blue-900/30" },
-            { label: "Google Maps SDK", desc: "GIS & Heatmaps", color: "from-green-500/10 to-emerald-500/10 text-green-300 border-green-900/30" },
-            { label: "Vertex AI", desc: "AutoML Models", color: "from-purple-500/10 to-violet-500/10 text-purple-300 border-purple-900/30" },
-            { label: "Firebase Storage", desc: "Visual Media", color: "from-amber-500/10 to-orange-500/10 text-amber-300 border-orange-900/30" },
-            { label: "Firebase Auth", desc: "Citizen Login", color: "from-rose-500/10 to-orange-500/10 text-rose-300 border-rose-900/30" },
-            { label: "Cloud Run", desc: "Scale Servers", color: "from-sky-500/10 to-cyan-500/10 text-sky-300 border-sky-900/30" },
-            { label: "Cloud Functions", desc: "Intake Workflows", color: "from-teal-500/10 to-emerald-500/10 text-teal-300 border-teal-900/30" },
-            { label: "Cloud Monitoring", desc: "SLA Audits", color: "from-slate-500/10 to-slate-600/10 text-slate-300 border-slate-800" }
-          ].map((tech) => (
-            <div key={tech.label} className={`p-2.5 rounded-xl border bg-gradient-to-b ${tech.color} flex flex-col justify-center min-h-[60px]`}>
-              <span className="text-[10px] tracking-tight block">{tech.label}</span>
-              <span className="text-[8px] text-slate-500 font-semibold block mt-0.5">{tech.desc}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -813,135 +690,3 @@ function ChatbotWidget() {
   );
 }
 
-function IntroSplash({ onClose }: { onClose: () => void }) {
-  const [phase, setPhase] = useState(0);
-
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setPhase(1), 3000),
-      setTimeout(() => setPhase(2), 6500),
-      setTimeout(() => setPhase(3), 9500),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, []);
-
-  return (
-    <div className="fixed inset-0 z-[9999] bg-slate-950 flex flex-col items-center justify-center p-4 transition-all duration-700">
-      
-      {/* Background gradients */}
-      <div className={`absolute inset-0 transition-all duration-1000 opacity-60 ${
-        phase === 0 ? "bg-gradient-to-b from-amber-500/20 via-orange-600/10 to-slate-950" :
-        phase === 1 ? "bg-gradient-to-b from-slate-900 via-rose-950/20 to-slate-950" :
-        "bg-gradient-to-b from-violet-950/20 via-brand-950/15 to-slate-950"
-      }`} />
-
-      {/* Main Container */}
-      <div className="relative w-full max-w-2xl text-center space-y-8 z-10 flex flex-col items-center">
-        
-        {/* Narrative Text */}
-        <div className="h-16 flex items-center justify-center">
-          <h1 className="text-2xl md:text-3xl font-extrabold font-serif-header text-white tracking-tight leading-snug drop-shadow transition-all duration-500">
-            {phase === 0 && <span className="animate-fade-in">Every city has a pulse...</span>}
-            {phase === 1 && <span className="animate-fade-in text-rose-400">...but a pulse can weaken.</span>}
-            {phase === 2 && <span className="animate-fade-in text-emerald-400">Then CivicPulse restores it.</span>}
-            {phase === 3 && <span className="animate-fade-in text-brand-400">Where every civic issue has a public journey.</span>}
-          </h1>
-        </div>
-
-        {/* Visual Scene Canvas */}
-        <div className="relative w-full h-[260px] rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-md overflow-hidden flex flex-col items-center justify-end p-4 shadow-2xl">
-          
-          {/* Heartbeat Pulse Line */}
-          <div className="absolute inset-x-0 top-10 h-20 flex items-center justify-center pointer-events-none">
-            <svg className="w-full h-full opacity-60" viewBox="0 0 600 80">
-              <path
-                d="M 0 40 L 150 40 L 170 10 L 190 70 L 210 30 L 230 50 L 250 40 L 400 40 L 420 10 L 440 70 L 460 30 L 480 50 L 500 40 L 600 40"
-                fill="none"
-                stroke={phase === 0 ? "#10b981" : phase === 1 ? "#f43f5e" : "#8b5cf6"}
-                strokeWidth="3"
-                strokeDasharray="600"
-                strokeDashoffset={phase === 1 ? "400" : "0"}
-                className={`transition-all duration-1000 ${
-                  phase === 0 ? "animate-pulse" : phase === 1 ? "animate-none opacity-40" : "animate-pulse"
-                }`}
-                style={{
-                  animationDuration: phase === 0 ? "1.5s" : "0.5s"
-                }}
-              />
-            </svg>
-          </div>
-
-          {/* Indian Streetscape */}
-          <div className="w-full h-8 bg-slate-800 rounded-b-lg relative border-t-2 border-dashed border-slate-700">
-            {/* Pothole Crater */}
-            <div className={`absolute left-1/3 bottom-1.5 w-10 h-3 bg-slate-950 rounded-full border border-slate-800 transition-all duration-500 transform ${
-              phase >= 1 && phase < 2 ? "scale-100 opacity-100 animate-bounce" : "scale-0 opacity-0"
-            }`} />
-            
-            {/* Water Spraying */}
-            <div className={`absolute right-1/4 bottom-3 w-8 h-8 pointer-events-none transition-all duration-500 transform ${
-              phase >= 1 && phase < 2 ? "scale-100 opacity-100" : "scale-0 opacity-0"
-            }`}>
-              <span className="text-xl animate-bounce block">💦</span>
-            </div>
-          </div>
-
-          {/* Emojis floating representing community */}
-          <div className="absolute inset-x-4 bottom-8 flex justify-between items-end pointer-events-none px-6">
-            <span className="text-4xl filter drop-shadow">🌳</span>
-            
-            <span className={`text-3xl transition-all duration-[2.5s] ease-out transform ${
-              phase === 0 ? "translate-x-12 opacity-100" : phase === 1 ? "opacity-60" : "translate-x-32 opacity-100"
-            }`}>
-              🚶‍♂️🚶‍♀️
-            </span>
-
-            <div className="flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full filter blur-md transition-all duration-500 ${
-                (phase === 0 || phase >= 2) ? "bg-amber-300 opacity-80" : "bg-transparent opacity-0"
-              }`} />
-              <span className="text-3xl -mt-6">💡</span>
-            </div>
-
-            <span className={`text-3xl transition-all duration-1000 transform ${
-              phase >= 1 ? "scale-90" : "scale-100"
-            }`}>
-              🏪
-            </span>
-
-            <span className={`text-3xl transition-all duration-500 transform absolute left-2/3 bottom-2 ${
-              phase >= 1 && phase < 2 ? "scale-100 opacity-100 animate-bounce" : "scale-0 opacity-0"
-            }`}>
-              🗑️
-            </span>
-
-            <span className="text-4xl filter drop-shadow">🌳</span>
-          </div>
-
-          {/* Sweep Scanning line */}
-          <div className={`absolute top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-brand-400 to-transparent shadow-[0_0_20px_#8b5cf6] transition-all duration-[2.5s] ease-in-out pointer-events-none ${
-            phase === 2 ? "left-full opacity-100" : "left-0 opacity-0"
-          }`} />
-
-        </div>
-
-        {/* Enter Dashboard Button */}
-        <div className="h-16 flex items-center justify-center">
-          {phase === 3 ? (
-            <button
-              onClick={onClose}
-              className="btn-primary !bg-brand-500 hover:!bg-brand-600 !text-white !px-8 !py-3.5 text-base rounded-xl font-bold shadow-2xl shadow-brand-500/20 transform transition active:scale-95 animate-fade-in"
-            >
-              Enter visible governance portal <ArrowRight className="inline ml-1" size={18} />
-            </button>
-          ) : (
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider animate-pulse">
-              Story unfolding...
-            </span>
-          )}
-        </div>
-
-      </div>
-    </div>
-  );
-}

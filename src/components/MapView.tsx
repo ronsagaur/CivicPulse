@@ -179,7 +179,7 @@ export default function MapView({
               📍 ${escapeHtml(r.addressText)}
             </div>
             <div style="font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-              ${STATUS_META[r.status].label} · Severity ${r.severity}/5
+              ${STATUS_META[r.status]?.label ?? r.status} · Severity ${r.severity}/5
             </div>
             <a href="/report/${r.id}" style="display: inline-block; font-size: 10px; font-weight: 700; color: #2563eb; text-decoration: none; border: 1px solid #e2e8f0; padding: 4px 8px; border-radius: 6px; background-color: #f8fafc;">
               Track Audit Timeline →

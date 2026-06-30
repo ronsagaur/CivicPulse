@@ -44,6 +44,7 @@ export default function ReportFlow() {
   const [description, setDescription] = useState("");
 
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [ai, setAi] = useState<AiMetadata | null>(null);
   const [title, setTitle] = useState("");
   const [anon, setAnon] = useState(false);
@@ -266,6 +267,7 @@ export default function ReportFlow() {
   async function analyze() {
     if (!chosen && !imageBase64) return;
     setAnalyzing(true);
+    setAnalyzeError(null);
     setStep(2);
     try {
       const { ai } = await api<{ ai: AiMetadata }>("/api/classify-preview", {
@@ -280,6 +282,9 @@ export default function ReportFlow() {
       setAi(ai);
       setTitle(ai.suggested_title);
       if (!description) setDescription(ai.suggested_description);
+    } catch (err) {
+      console.error("[CivicPulse] Classification failed:", err);
+      setAnalyzeError("AI analysis failed. Please try again or go back and reselect.");
     } finally {
       setAnalyzing(false);
     }
@@ -318,6 +323,9 @@ export default function ReportFlow() {
         setCreated(res.report);
         setStep(3);
       }
+    } catch (err) {
+      console.error("[CivicPulse] Report submission failed:", err);
+      alert("Failed to submit your report. Please check your connection and try again.");
     } finally {
       setSubmitting(false);
     }

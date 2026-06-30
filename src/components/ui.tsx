@@ -8,7 +8,7 @@ import {
 import { slaInfo, toneClass } from "@/lib/format";
 
 export function StatusBadge({ status }: { status: ReportStatus }) {
-  const meta = STATUS_META[status];
+  const meta = STATUS_META[status] ?? { label: status, tone: "neutral" as const };
   return (
     <span className={`chip ${toneClass(meta.tone)}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
@@ -18,7 +18,7 @@ export function StatusBadge({ status }: { status: ReportStatus }) {
 }
 
 export function CategoryChip({ category }: { category: IssueCategory }) {
-  const meta = CATEGORY_META[category];
+  const meta = CATEGORY_META[category] ?? CATEGORY_META.OTHER;
   return (
     <span className="chip bg-slate-100 text-slate-700 ring-slate-200">
       <span aria-hidden>{meta.emoji}</span>

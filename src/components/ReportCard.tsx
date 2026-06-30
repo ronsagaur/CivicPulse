@@ -7,7 +7,7 @@ import { timeAgo } from "@/lib/format";
 import { CategoryChip, SeverityDots, StatusBadge } from "./ui";
 
 export default function ReportCard({ report }: { report: Report }) {
-  const meta = CATEGORY_META[report.category];
+  const meta = CATEGORY_META[report.category] ?? CATEGORY_META.OTHER;
   return (
     <Link
       href={`/report/${report.id}`}

@@ -26,6 +26,9 @@ export default function TopNav() {
       router.refresh();
       // force any polling pages to re-pull immediately
       window.location.reload();
+    } catch (err) {
+      console.error("[CivicPulse] Reset failed:", err);
+      alert("Database reset failed. Please try again.");
     } finally {
       setResetting(false);
     }

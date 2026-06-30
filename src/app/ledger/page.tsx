@@ -485,6 +485,15 @@ function PredictionChart({ points, tone }: { points: number[]; tone: "red" | "am
   const strokeColor = tone === "red" ? "#ef4444" : tone === "amber" ? "#f59e0b" : "#10b981";
   const gradId = `chart-grad-${tone}`;
 
+  // Guard: need at least 2 points to draw a line
+  if (!points || points.length < 2) {
+    return (
+      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-full overflow-visible select-none">
+        <text x={chartWidth / 2} y={chartHeight / 2} textAnchor="middle" fill="#94a3b8" fontSize="12">Insufficient data</text>
+      </svg>
+    );
+  }
+
   const coords = points.map((p, idx) => {
     const x = (idx / (points.length - 1)) * (chartWidth - 20) + 10;
     const y = chartHeight - 10 - (p / 100) * (chartHeight - 20);

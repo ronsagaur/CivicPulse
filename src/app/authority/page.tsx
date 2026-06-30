@@ -44,7 +44,7 @@ export default function AuthorityDashboard() {
   const [expandedIssueId, setExpandedIssueId] = useState<string | null>(null);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch {}
     router.push("/login");
   };
 
@@ -83,6 +83,9 @@ export default function AuthorityDashboard() {
         body: JSON.stringify({ action: act }),
       });
       refresh();
+    } catch (err) {
+      console.error("[CivicPulse] Authority action failed:", err);
+      alert("Action failed. Please check your connection and try again.");
     } finally {
       setBusy(null);
     }

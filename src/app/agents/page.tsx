@@ -38,7 +38,7 @@ export default function AgentControlCenter() {
   const { data: reportData, refresh } = usePolling<{ reports: Report[] }>("/api/reports", 2000);
   const reports = reportData?.reports ?? [];
   const [busy, setBusy] = useState(false);
-  const [watchdogResult, setWatchdogResult] = useState<{ escalated: number; processed: number } | null>(null);
+  const [watchdogResult, setWatchdogResult] = useState<{ escalated: number; processed: number; error?: string } | null>(null);
   
   // Interactive filters
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
@@ -181,6 +181,7 @@ export default function AgentControlCenter() {
       }, 6000);
     } catch (err) {
       console.error(err);
+      setWatchdogResult({ processed: 0, escalated: 0, error: "Watchdog encountered an error. Check server logs." });
     } finally {
       setBusy(false);
     }
@@ -309,8 +310,12 @@ export default function AgentControlCenter() {
 
         <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
           {watchdogResult && (
-            <span className="text-[11px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl animate-fade-in font-bold">
-              Watchdog analyzed {watchdogResult.processed} issues, escalated {watchdogResult.escalated} breach!
+            <span className={`text-[11px] px-3 py-1.5 rounded-xl animate-fade-in font-bold ${
+              watchdogResult.error
+                ? "text-rose-600 bg-rose-50 border border-rose-100"
+                : "text-emerald-600 bg-emerald-50 border border-emerald-100"
+            }`}>
+              {watchdogResult.error || `Watchdog analyzed ${watchdogResult.processed} issues, escalated ${watchdogResult.escalated} breach!`}
             </span>
           )}
           <button

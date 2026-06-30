@@ -8,13 +8,18 @@ export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const body = await req.json().catch(() => ({}));
-  const verdict = (body.verdict ?? "CONFIRM") as Verdict;
-  const verifierId = body.verifierId as string | undefined;
+  try {
+    const body = await req.json().catch(() => ({}));
+    const verdict = (body.verdict ?? "CONFIRM") as Verdict;
+    const verifierId = body.verifierId as string | undefined;
 
-  const report = await verifyReport(params.id, verifierId ?? "u-you", verdict);
-  if (!report) {
-    return NextResponse.json({ error: "not found" }, { status: 404 });
+    const report = await verifyReport(params.id, verifierId ?? "u-you", verdict);
+    if (!report) {
+      return NextResponse.json({ error: "not found" }, { status: 404 });
+    }
+    return NextResponse.json({ report });
+  } catch (err) {
+    console.error(`[POST /api/reports/${params.id}/verify] Error:`, err);
+    return NextResponse.json({ error: "Verification failed" }, { status: 500 });
   }
-  return NextResponse.json({ report });
 }
