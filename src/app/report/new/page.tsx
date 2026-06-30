@@ -57,6 +57,170 @@ export default function ReportFlow() {
     []
   );
 
+  const instantPresetAnalysis = (cat: IssueCategory) => {
+    setAnalyzing(true);
+    setStep(2);
+    const sample = SAMPLES.find(s => s.category === cat) || SAMPLES[0];
+    setChosen(sample);
+    setMediaType("image/png");
+    setUploadName(`${cat.toLowerCase()}_evidence.png`);
+
+    const mockAiData: Record<IssueCategory, AiMetadata> = {
+      POTHOLE: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "POTHOLE",
+        severity: 4,
+        confidence: 0.96,
+        suggested_title: "Severe Road Craters on MG Road",
+        suggested_description: "A deep pothole measuring roughly 1.2 meters wide on the main carriageway. Contains a single loose brick placed by locals as a warning marker. High hazard risk for two-wheelers.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      GARBAGE: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "GARBAGE",
+        severity: 3,
+        confidence: 0.94,
+        suggested_title: "Overflowing Green Municipal Dustbin",
+        suggested_description: "Standard municipal waste bin is completely full, with multiple plastic bags spilling onto the footpath. A stray dog was detected sniffing at the debris. Heavy litter scatter.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      WATER_LEAK: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "WATER_LEAK",
+        severity: 4,
+        confidence: 0.97,
+        suggested_title: "Burst Blue PVC Pipeline Spray",
+        suggested_description: "A clean municipal water line joint has failed near the sidewalk, resulting in a high-pressure spray of clean water onto the concrete road. Silt and soil erosion beginning.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      SEWAGE: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "SEWAGE",
+        severity: 5,
+        confidence: 0.92,
+        suggested_title: "Open Storm Drain with Murky Runoff",
+        suggested_description: "A broken concrete drain slab has collapsed, exposing open sewage flow. High bio-hazard risk. Murky green effluent flowing directly onto pedestrian walkway.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      STREETLIGHT: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "STREETLIGHT",
+        severity: 3,
+        confidence: 0.95,
+        suggested_title: "Flickering Street Lamp near Residential Lane",
+        suggested_description: "The streetlamp post is tilted roughly 15 degrees. Warm light source is flickering intermittently, causing complete darkness on the corner intersection at night.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      PUBLIC_SAFETY: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "PUBLIC_SAFETY",
+        severity: 4,
+        confidence: 0.91,
+        suggested_title: "Compromised Perimeter Fence and Barricade",
+        suggested_description: "A construction perimeter fence has collapsed onto the public road. Temporary yellow caution tape is wrapped around the hazard, but poses a blockage to traffic.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      TRAFFIC_VIOLATION: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "TRAFFIC_VIOLATION",
+        severity: 2,
+        confidence: 0.93,
+        suggested_title: "Zebra Crossing Blocked by Rickshaw",
+        suggested_description: "A yellow-black auto-rickshaw is parked directly over the pedestrian zebra crossing. Foot traffic is being diverted into active vehicle lanes.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      DAMAGED_SIGNAGE: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "DAMAGED_SIGNAGE",
+        severity: 2,
+        confidence: 0.95,
+        suggested_title: "Tilted Street Guideboard Post",
+        suggested_description: "Metallic signpost is severely bent and rusted. The text is partially unreadable and the structure is leaning over the pedestrian walkway.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      ENCROACHMENT: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "ENCROACHMENT",
+        severity: 3,
+        confidence: 0.94,
+        suggested_title: "Footpath Blockage by Vendor Cart",
+        suggested_description: "A vendor pushcart with a blue tarpaulin cover has occupied the entire sidewalk width, forcing pedestrians to walk on the main road.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      STRAY_ANIMAL: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "STRAY_ANIMAL",
+        severity: 2,
+        confidence: 0.91,
+        suggested_title: "Stray Dog resting near Tea Stall",
+        suggested_description: "A friendly stray animal is resting in the middle of a residential road. No immediate danger detected, but poses a minor obstacle for evening vehicles.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      },
+      OTHER: {
+        is_civic_issue: true,
+        is_private_matter: false,
+        category: "OTHER",
+        severity: 1,
+        confidence: 0.90,
+        suggested_title: "Unclassified Local Infrastructure Concern",
+        suggested_description: "General civic report submitted by resident. System flags for manual routing and review.",
+        visual_evidence_quality: "GOOD",
+        potential_fraud_signals: [],
+        estimated_age_of_issue: "RECENT",
+        source: "mock"
+      }
+    };
+
+    const finalAi = mockAiData[cat] || mockAiData.POTHOLE;
+
+    setTimeout(() => {
+      setAi(finalAi);
+      setTitle(finalAi.suggested_title);
+      setDescription(finalAi.suggested_description);
+      setAnalyzing(false);
+    }, 100);
+  };
+
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -136,24 +300,48 @@ export default function ReportFlow() {
               {imageBase64 ? (
                 <>
                   {isVideo ? (
-                    <video src={`data:${mediaType};base64,${imageBase64}`} controls className="absolute inset-0 w-full h-full object-cover opacity-90" />
+                    <video src={imageBase64.startsWith("/") ? imageBase64 : `data:${mediaType};base64,${imageBase64}`} controls className="absolute inset-0 w-full h-full object-cover opacity-90" />
                   ) : (
-                    <img src={`data:${mediaType};base64,${imageBase64}`} alt="Uploaded preview" className="absolute inset-0 w-full h-full object-cover opacity-90" />
+                    <img src={imageBase64.startsWith("/") ? imageBase64 : `data:${mediaType};base64,${imageBase64}`} alt="Uploaded preview" className="absolute inset-0 w-full h-full object-cover opacity-90" />
                   )}
                   <button onClick={() => { setImageBase64(undefined); setUploadName(null); setMediaType(undefined); }} className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white backdrop-blur-md hover:scale-110 transition z-10">
                     <X size={18} />
                   </button>
                 </>
               ) : (
-                <div className="text-center z-10">
-                  <div className="w-20 h-20 mx-auto rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 mb-4 animate-pulse">
-                    <Camera size={32} className="text-white/80" />
+                <div className="text-center z-10 w-full px-4">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 mb-3 animate-pulse">
+                    <Camera size={26} className="text-white/80" />
                   </div>
-                  <h2 className="text-xl font-extrabold text-white tracking-tight">Capture Evidence</h2>
-                  <p className="text-xs text-white/50 mt-2 max-w-[240px] mx-auto">Point your camera at the civic issue. Our AI will analyze the scene.</p>
+                  <h2 className="text-base font-extrabold text-white tracking-tight">Capture Evidence</h2>
+                  <p className="text-[10px] text-white/50 mt-1 max-w-[200px] mx-auto">Point your camera at the civic issue, or select a preset below.</p>
                   
-                  <label className="mt-6 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-white text-slate-900 px-6 py-3 text-sm font-extrabold shadow-xl hover:scale-105 transition-transform">
-                    {isVideo ? <Video size={16} /> : <Upload size={16} />}
+                  {/* Preset thumbnails */}
+                  <div className="mt-4 flex justify-center gap-2">
+                    {[
+                      { cat: "POTHOLE" as IssueCategory, label: "Pothole", icon: "/assets/icons/pothole.png" },
+                      { cat: "GARBAGE" as IssueCategory, label: "Garbage", icon: "/assets/icons/garbage.png" },
+                      { cat: "WATER_LEAK" as IssueCategory, label: "Leak", icon: "/assets/icons/water_leak.png" }
+                    ].map((p) => (
+                      <button
+                        key={p.cat}
+                        type="button"
+                        onClick={() => {
+                          setImageBase64(p.icon);
+                          instantPresetAnalysis(p.cat);
+                        }}
+                        className="flex flex-col items-center bg-black/40 hover:bg-black/60 active:scale-95 border border-white/10 rounded-xl p-1.5 w-16 transition-all"
+                      >
+                        <div className="relative w-8 h-8">
+                          <img src={p.icon} alt={p.label} className="object-contain w-full h-full" />
+                        </div>
+                        <span className="text-[8px] font-bold text-white/90 mt-1">{p.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <label className="mt-4 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-white text-slate-900 px-5 py-2.5 text-xs font-extrabold shadow-xl hover:scale-105 transition-transform">
+                    {isVideo ? <Video size={14} /> : <Upload size={14} />}
                     <span>Open Camera</span>
                     <input type="file" accept="image/*,video/*" className="hidden" onChange={handleUpload} capture="environment" />
                   </label>
@@ -201,14 +389,6 @@ export default function ReportFlow() {
               </div>
 
               <div className="mt-5 space-y-4">
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add a quick note..."
-                  className="w-full resize-none rounded-xl bg-slate-50 border-transparent p-4 text-sm font-medium text-slate-700 outline-none focus:bg-white focus:border-brand-400 focus:ring-4 focus:ring-brand-50 transition-all"
-                  rows={2}
-                />
-                
                 <button
                   onClick={analyze}
                   disabled={!chosen && !imageBase64}
@@ -236,7 +416,11 @@ export default function ReportFlow() {
               </div>
             </div>
           ) : (
-            <div className="card overflow-hidden">
+            <div className="card overflow-hidden border border-slate-200/60 shadow-xl">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-sm font-extrabold text-slate-800 font-serif-header">Does this look right?</h2>
+                <span className="text-[9px] text-emerald-600 font-extrabold uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100/50">AI Auto-Drafted ✓</span>
+              </div>
               <div
                 className={`flex items-center gap-3 bg-gradient-to-r ${
                   chosen?.grad ?? "from-brand-100 to-brand-200"
@@ -248,7 +432,7 @@ export default function ReportFlow() {
                       <Video size={18} className="text-white animate-pulse" />
                     ) : (
                       <img
-                        src={`data:${mediaType};base64,${imageBase64}`}
+                        src={imageBase64.startsWith("/") ? imageBase64 : `data:${mediaType};base64,${imageBase64}`}
                         alt="Upload thumbnail"
                         className="w-full h-full object-cover"
                       />
