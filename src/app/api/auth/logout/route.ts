@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 export async function POST() {
-  cookies().delete("civicpulse_session");
-  return NextResponse.json({ success: true, redirect: "/login" });
+  const res = NextResponse.json({ success: true, redirect: "/login" });
+  res.cookies.set("civicpulse_session", "", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0, // Expire immediately
+  });
+  return res;
 }

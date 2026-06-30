@@ -2,17 +2,56 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Shield, User as UserIcon, Loader2 } from "lucide-react";
+import {
+  Zap,
+  User as UserIcon,
+  Phone,
+  MapPin,
+  Loader2,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  Shield,
+  BarChart3,
+  Eye,
+} from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [role, setRole] = useState<"CITIZEN" | "AUTHORITY">("CITIZEN");
+  const [showCredentials, setShowCredentials] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingDemo, setLoadingDemo] = useState(false);
   const [error, setError] = useState("");
 
-  const handleCitizenLogin = async (e: React.FormEvent) => {
+  // ── Instant Demo Entry ────────────────────────────────────────
+  const handleDemoLogin = async () => {
+    setLoadingDemo(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "demo" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        router.push(data.redirect);
+      } else {
+        setError(data.error || "Demo login failed.");
+        setLoadingDemo(false);
+      }
+    } catch {
+      setError("Network error. Please try again.");
+      setLoadingDemo(false);
+    }
+  };
+
+  // ── Credentials Login ─────────────────────────────────────────
+  const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) {
       setError("Please enter your name and phone number.");
@@ -31,7 +70,7 @@ export default function LoginPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            role: "CITIZEN",
+            mode: "credentials",
             name: name.trim(),
             phone: phone.trim(),
             homeLat: lat,
@@ -45,7 +84,7 @@ export default function LoginPage() {
           setError(data.error || "Login failed.");
           setLoading(false);
         }
-      } catch (err) {
+      } catch {
         setError("Network error. Please try again.");
         setLoading(false);
       }
@@ -56,248 +95,210 @@ export default function LoginPage() {
       return;
     }
 
-    // Set a safety timeout of 5 seconds to prevent getting stuck if geolocation hangs
     const safetyTimeout = setTimeout(() => {
-      console.warn("Geolocation request timed out. Falling back to default location.");
       proceedWithLogin(19.1197, 72.8468);
     }, 5000);
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         clearTimeout(safetyTimeout);
-        const { latitude, longitude } = position.coords;
-        await proceedWithLogin(latitude, longitude);
+        await proceedWithLogin(position.coords.latitude, position.coords.longitude);
       },
-      async (geoError) => {
+      async () => {
         clearTimeout(safetyTimeout);
-        console.warn("Geolocation failed. Falling back to default location:", geoError);
         await proceedWithLogin(19.1197, 72.8468);
       },
       { enableHighAccuracy: false, timeout: 4000, maximumAge: 0 }
     );
   };
 
-  const handleQuickCitizenLogin = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          role: "CITIZEN",
-          name: "Rahul Sharma",
-          phone: "9876543210",
-          homeLat: 19.1197,
-          homeLng: 72.8468,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        router.push(data.redirect);
-      } else {
-        setError(data.error || "Login failed.");
-        setLoading(false);
-      }
-    } catch (err) {
-      setError("Network error. Please try again.");
-      setLoading(false);
-    }
-  };
-
-  const handleAuthorityLogin = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "AUTHORITY" }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        router.push(data.redirect);
-      } else {
-        setError(data.error || "Login failed.");
-        setLoading(false);
-      }
-    } catch (err) {
-      setError("Network error. Please try again.");
-      setLoading(false);
-    }
-  };
-
-  const [resetting, setResetting] = useState(false);
-
-  const handleResetSystem = async () => {
-    if (confirm("Are you sure you want to clear all custom reports and reset the system database?")) {
-      setResetting(true);
-      try {
-        await fetch("/api/reset", { method: "POST" });
-        alert("System successfully reset to default seed state!");
-      } catch (err) {
-        alert("Failed to reset system. Please try again.");
-      } finally {
-        setResetting(false);
-      }
-    }
-  };
+  const isAnyLoading = loading || loadingDemo;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-gradient-to-br from-brand-100/40 to-brand-200/20 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-gradient-to-tr from-amber-100/30 to-brand-100/20 blur-3xl" />
+      </div>
+
+      {/* Main Card */}
       <div className="card w-full max-w-md p-8 animate-fade-in relative z-10">
+        {/* Header */}
         <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 mb-4 shadow-lg shadow-brand-500/20">
+            <MapPin className="text-white" size={28} />
+          </div>
           <h1 className="text-3xl font-extrabold font-serif-header text-slate-800">
             CivicPulse
           </h1>
-          <p className="text-sm text-slate-500 mt-2">
-            Making civic governance visible.
+          <p className="text-sm text-slate-500 mt-1.5">
+            AI-powered civic accountability — report, verify, resolve.
           </p>
         </div>
 
-        {/* Role Toggle */}
-        <div className="flex rounded-lg bg-slate-100 p-1 mb-6">
-          <button
-            onClick={() => setRole("CITIZEN")}
-            className={`flex-1 py-2 text-sm font-bold rounded-md transition ${
-              role === "CITIZEN"
-                ? "bg-white shadow-sm text-slate-800"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Citizen
-          </button>
-          <button
-            onClick={() => setRole("AUTHORITY")}
-            className={`flex-1 py-2 text-sm font-bold rounded-md transition ${
-              role === "AUTHORITY"
-                ? "bg-white shadow-sm text-slate-800"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Authority
-          </button>
-        </div>
-
+        {/* Error Banner */}
         {error && (
-          <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-xs font-semibold rounded-lg border border-rose-100">
+          <div className="mb-5 p-3 bg-rose-50 text-rose-600 text-xs font-semibold rounded-xl border border-rose-100 animate-fade-in">
             {error}
           </div>
         )}
 
-        {role === "CITIZEN" ? (
-          <form onSubmit={handleCitizenLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Full Name
-              </label>
-              <div className="relative">
-                <UserIcon
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Rahul Sharma"
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border-slate-200 bg-slate-50 text-sm focus:border-brand-500 focus:ring-brand-500 transition"
-                  required
-                />
+        {/* ── Primary: Instant Demo Entry ─────────────────────────── */}
+        <button
+          onClick={handleDemoLogin}
+          disabled={isAnyLoading}
+          className="w-full group relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-amber-500 p-[1.5px] shadow-lg shadow-brand-500/20 hover:shadow-xl hover:shadow-brand-500/30 transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+        >
+          <div className="relative rounded-[calc(1rem-1.5px)] bg-gradient-to-r from-brand-600 via-brand-500 to-amber-500 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm">
+                  {loadingDemo ? (
+                    <Loader2 size={20} className="text-white animate-spin" />
+                  ) : (
+                    <Zap size={20} className="text-white" />
+                  )}
+                </div>
+                <div className="text-left">
+                  <div className="text-white font-bold text-sm">
+                    Instant Demo Entry
+                  </div>
+                  <div className="text-white/70 text-xs mt-0.5">
+                    Pre-loaded data · Andheri West Ward 14
+                  </div>
+                </div>
               </div>
+              <ArrowRight
+                size={18}
+                className="text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all"
+              />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Phone Number
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">
-                  +91
-                </span>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="9876543210"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border-slate-200 bg-slate-50 text-sm focus:border-brand-500 focus:ring-brand-500 transition"
-                  required
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full mt-2"
+          </div>
+        </button>
+
+        {/* Feature chips under demo button */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-3 mb-6">
+          {[
+            { icon: Sparkles, label: "AI Agents" },
+            { icon: Shield, label: "Trust System" },
+            { icon: BarChart3, label: "Live Analytics" },
+            { icon: Eye, label: "Public Ledger" },
+          ].map(({ icon: Icon, label }) => (
+            <span
+              key={label}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-500"
             >
-              {loading ? (
-                <Loader2 size={16} className="animate-spin mx-auto" />
-              ) : (
-                <>
-                  <MapPin size={16} /> Enter Dashboard
-                </>
-              )}
-            </button>
-            <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-slate-200"></div>
-              <span className="flex-shrink mx-4 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">or</span>
-              <div className="flex-grow border-t border-slate-200"></div>
-            </div>
-            <button
-              type="button"
-              onClick={handleQuickCitizenLogin}
-              disabled={loading}
-              className="btn-ghost !border-dashed !border-slate-300 w-full flex items-center justify-center gap-2 hover:!bg-slate-50 transition"
-            >
-              ⚡ Instant Entry (Andheri West Ward 14)
-            </button>
-            <p className="text-center text-[10px] text-slate-400 mt-3 px-4 leading-tight">
-              By entering, the map will align with your registered physical neighborhood.
-            </p>
-          </form>
+              <Icon size={10} />
+              {label}
+            </span>
+          ))}
+        </div>
+
+        {/* ── Divider ─────────────────────────────────────────────── */}
+        <div className="relative flex items-center mb-5">
+          <div className="flex-grow border-t border-slate-200" />
+          <span className="flex-shrink mx-4 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
+            or
+          </span>
+          <div className="flex-grow border-t border-slate-200" />
+        </div>
+
+        {/* ── Secondary: Login with Credentials ───────────────────── */}
+        {!showCredentials ? (
+          <button
+            onClick={() => setShowCredentials(true)}
+            disabled={isAnyLoading}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-[1.5px] border-dashed border-slate-300 text-sm font-semibold text-slate-600 hover:border-brand-300 hover:text-brand-700 hover:bg-brand-50/50 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            <UserIcon size={15} />
+            Login with Credentials
+            <ChevronDown size={14} className="text-slate-400" />
+          </button>
         ) : (
-          <div className="space-y-4 text-center">
-            <div className="py-6 px-4 bg-brand-50 rounded-xl border border-dashed border-brand-200">
-              <Shield className="mx-auto text-brand-600 mb-2" size={32} />
-              <h3 className="text-sm font-bold text-brand-800">
-                Official Access
-              </h3>
-              <p className="text-xs text-brand-600/80 mt-1">
-                Enter the internal portal for assigning resources, escalating tickets, and confirming resolutions.
-              </p>
-            </div>
+          <div className="animate-fade-in">
             <button
-              onClick={handleAuthorityLogin}
-              disabled={loading}
-              className="btn-primary w-full"
+              onClick={() => {
+                setShowCredentials(false);
+                setError("");
+              }}
+              disabled={isAnyLoading}
+              className="w-full flex items-center justify-center gap-2 mb-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition"
             >
-              {loading ? (
-                <Loader2 size={16} className="animate-spin mx-auto" />
-              ) : (
-                "Enter Authority Portal"
-              )}
+              <ChevronUp size={14} />
+              Hide credentials form
             </button>
+
+            <form onSubmit={handleCredentialsLogin} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <UserIcon
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Rahul Sharma"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/80 text-sm focus:border-brand-400 focus:ring-2 focus:ring-brand-100 focus:bg-white outline-none transition"
+                    disabled={isAnyLoading}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <Phone
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="9876543210"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/80 text-sm focus:border-brand-400 focus:ring-2 focus:ring-brand-100 focus:bg-white outline-none transition"
+                    disabled={isAnyLoading}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isAnyLoading}
+                className="btn-primary w-full mt-1"
+              >
+                {loading ? (
+                  <Loader2 size={16} className="animate-spin mx-auto" />
+                ) : (
+                  <>
+                    <ArrowRight size={16} /> Enter Dashboard
+                  </>
+                )}
+              </button>
+
+              <p className="text-center text-[10px] text-slate-400 mt-2 px-4 leading-tight">
+                Your location will be used to align the map with your neighborhood.
+                New accounts start at Trust Level 10.
+              </p>
+            </form>
           </div>
         )}
       </div>
 
-      {/* System Reset Trigger */}
-      <div className="mt-4 text-center z-10">
-        <button
-          onClick={handleResetSystem}
-          disabled={resetting}
-          className="text-[10px] text-slate-400 hover:text-slate-600 font-bold transition flex items-center justify-center gap-1 mx-auto"
-        >
-          {resetting ? (
-            <>
-              <Loader2 size={10} className="animate-spin" /> Resetting database...
-            </>
-          ) : (
-            <>
-              🔄 Clear Database &amp; Reload Seed State
-            </>
-          )}
-        </button>
-      </div>
+      {/* Footer */}
+      <p className="text-[10px] text-slate-400 mt-6 text-center z-10 max-w-xs leading-relaxed">
+        Built with AI multi-agent architecture. Switch between Citizen, Authority, and Ledger views from the navigation bar after login.
+      </p>
     </div>
   );
 }
