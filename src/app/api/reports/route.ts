@@ -148,7 +148,10 @@ export async function POST(req: Request) {
     );
 
     return NextResponse.json({ report: updatedReport || report }, { status: 201 });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("[POST /api/reports] Error:", err);
     return NextResponse.json({ error: "Failed to create report" }, { status: 500 });
   }

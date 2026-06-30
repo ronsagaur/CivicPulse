@@ -13,7 +13,10 @@ export async function POST(
       return NextResponse.json({ error: "not found" }, { status: 404 });
     }
     return NextResponse.json({ report });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error(`[POST /api/reports/${params.id}/upvote] Error:`, err);
     return NextResponse.json({ error: "Upvote failed" }, { status: 500 });
   }

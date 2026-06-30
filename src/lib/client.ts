@@ -11,6 +11,12 @@ export async function api<T = any>(
     headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
     cache: "no-store",
   });
+  if (res.status === 401) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new Error("401 Unauthorized");
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`${res.status} ${text}`);
