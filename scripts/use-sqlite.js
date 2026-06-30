@@ -2,6 +2,12 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
+// Skip switching back to SQLite in production/CI environments
+if (process.env.CI || process.env.VERCEL || process.env.NODE_ENV === "production" || process.env.FIREBASE_CONFIG || process.env.GOOGLE_CLOUD_PROJECT) {
+  console.log("[use-sqlite.js] Skipping SQLite swap in CI/production environment.");
+  process.exit(0);
+}
+
 const schemaPath = path.join(__dirname, "../prisma/schema.prisma");
 
 try {
