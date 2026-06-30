@@ -1,9 +1,21 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
+import { useEffect, useRef, useState } from "react";
+import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import type { Report, IssueCategory } from "@/lib/types";
 import { CATEGORY_META, STATUS_META } from "@/lib/types";
+
+// Call setOptions exactly once at module level (safe to repeat, idempotent after first load)
+let mapsOptionsSet = false;
+function ensureMapsOptions() {
+  if (mapsOptionsSet) return;
+  mapsOptionsSet = true;
+  setOptions({
+    key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    v: "weekly",
+    libraries: ["places"],
+  });
+}
 
 function colorFor(status: Report["status"]): string {
   switch (status) {
@@ -41,48 +53,59 @@ export default function MapView({
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const circlesRef = useRef<google.maps.Circle[]>([]);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    const loader = new Loader({
-      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-      version: "weekly",
-      libraries: ["places"],
-    });
 
-    (loader as any).load().then(() => {
-      if (!active || !elRef.current || mapRef.current) return;
+    try {
+      ensureMapsOptions();
+    } catch (e) {
+      console.error("[MapView] Failed to set Google Maps options:", e);
+      setMapError("Map configuration error.");
+      return;
+    }
 
-      const map = new google.maps.Map(elRef.current, {
-        center: { lat: center.lat, lng: center.lng },
-        zoom,
-        disableDefaultUI: false,
-        zoomControl: true,
-        streetViewControl: false,
-        mapTypeControl: false,
-        // Premium clean styling - hides busy POIs to make civic markers pop
-        styles: [
-          {
-            featureType: "poi",
-            elementType: "labels",
-            stylers: [{ visibility: "off" }],
-          },
-          {
-            featureType: "transit",
-            elementType: "labels.icon",
-            stylers: [{ visibility: "off" }],
-          },
-          {
-            featureType: "road",
-            elementType: "labels.icon",
-            stylers: [{ visibility: "off" }],
-          },
-        ],
+    importLibrary("maps")
+      .then(() => {
+        if (!active || !elRef.current || mapRef.current) return;
+
+        const map = new google.maps.Map(elRef.current, {
+          center: { lat: center.lat, lng: center.lng },
+          zoom,
+          disableDefaultUI: false,
+          zoomControl: true,
+          streetViewControl: false,
+          mapTypeControl: false,
+          // Premium clean styling - hides busy POIs to make civic markers pop
+          styles: [
+            {
+              featureType: "poi",
+              elementType: "labels",
+              stylers: [{ visibility: "off" }],
+            },
+            {
+              featureType: "transit",
+              elementType: "labels.icon",
+              stylers: [{ visibility: "off" }],
+            },
+            {
+              featureType: "road",
+              elementType: "labels.icon",
+              stylers: [{ visibility: "off" }],
+            },
+          ],
+        });
+
+        mapRef.current = map;
+        renderMarkers();
+      })
+      .catch((err) => {
+        console.error("[MapView] Failed to load Google Maps library:", err);
+        if (active) {
+          setMapError("Unable to load map. Please check your internet connection and try again.");
+        }
       });
-
-      mapRef.current = map;
-      renderMarkers();
-    });
 
     return () => {
       active = false;
@@ -173,6 +196,19 @@ export default function MapView({
         });
       });
     });
+  }
+
+  if (mapError) {
+    return (
+      <div
+        style={{ height: typeof height === "number" ? `${height}px` : height }}
+        className="w-full overflow-hidden rounded-2xl ring-1 ring-slate-200 flex flex-col items-center justify-center bg-slate-50 gap-3"
+      >
+        <span className="text-3xl">🗺️</span>
+        <p className="text-sm font-semibold text-slate-500 text-center px-6">{mapError}</p>
+        <p className="text-xs text-slate-400 text-center px-6">Report locations are still being tracked — map will reload on next visit.</p>
+      </div>
+    );
   }
 
   return (

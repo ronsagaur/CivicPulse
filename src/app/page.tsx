@@ -37,16 +37,24 @@ export default function CitizenHome() {
   const [activeArchNode, setActiveArchNode] = useState<string>("sentinel");
 
   const fetchMeta = () => {
-    api<{ currentUser: AppUser; users: AppUser[] }>("/api/meta").then((m) => {
-      setMe(m.currentUser);
-      setAllUsers(m.users);
-    });
+    api<{ currentUser: AppUser; users: AppUser[] }>("/api/meta")
+      .then((m) => {
+        setMe(m.currentUser);
+        setAllUsers(m.users);
+      })
+      .catch((err) => {
+        console.error("[CivicPulse] Failed to fetch user metadata:", err);
+      });
   };
 
   useEffect(() => {
     fetchMeta();
-    if (sessionStorage.getItem("civicpulse_intro_seen") !== "true") {
-      setShowIntro(true);
+    try {
+      if (sessionStorage.getItem("civicpulse_intro_seen") !== "true") {
+        setShowIntro(true);
+      }
+    } catch {
+      // sessionStorage may be unavailable in some browsers/environments
     }
   }, []);
 

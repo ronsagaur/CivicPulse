@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/store";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const prisma = new PrismaClient();
 
 export async function askChatbot(userMessage: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY;
