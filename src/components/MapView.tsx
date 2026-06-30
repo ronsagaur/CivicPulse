@@ -34,7 +34,7 @@ export default function MapView({
   reports: Report[];
   center: { lat: number; lng: number };
   zoom?: number;
-  height?: number;
+  height?: number | string;
   heat?: boolean;
 }) {
   const elRef = useRef<HTMLDivElement>(null);
@@ -178,7 +178,7 @@ export default function MapView({
   return (
     <div
       ref={elRef}
-      style={{ height }}
+      style={{ height: typeof height === "number" ? `${height}px` : height }}
       className="w-full overflow-hidden rounded-2xl ring-1 ring-slate-200"
     />
   );

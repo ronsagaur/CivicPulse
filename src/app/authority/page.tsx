@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Shield,
   Activity,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 import { api, usePolling } from "@/lib/client";
 import { CATEGORY_META, type Report, type IssueCategory } from "@/lib/types";
@@ -128,18 +129,30 @@ export default function AuthorityDashboard() {
           </div>
         </div>
 
-        <div className="bg-slate-50/50 rounded-xl px-4 py-2.5 border border-slate-100/50 text-xs text-slate-600 max-w-xl">
+        <div className="bg-slate-50/50 rounded-xl px-4 py-2.5 border border-slate-100/50 text-xs text-slate-600 max-w-sm">
           <span className="font-bold text-slate-800 flex items-center gap-1.5 mb-0.5">
             <span className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
             Ambient Intelligent Assist
           </span>
           {hasFocusTicket ? (
             <p>
-              Today there are <strong className="text-brand-700">{reports.length} issues</strong> requiring action. Resolving the high priority <span className="font-bold text-slate-800">{focusMeta?.label}</span> ticket near <span className="underline">{focusTicket.addressText}</span> first reduces predicted citizen dissatisfaction by <strong className="text-brand-700">{dissatisfactionSaving}%</strong>.
+              Today there are <strong className="text-brand-700">{reports.length} issues</strong> active. Resolving the high priority <span className="font-bold text-slate-800">{focusMeta?.label}</span> ticket near <span className="underline">{focusTicket.addressText}</span> first reduces predicted citizen dissatisfaction.
             </p>
           ) : (
-            <p>All clear! All active ward issues have been routed or resolved. Citizen satisfaction score is currently operating at optimal levels.</p>
+            <p>All clear! All active ward issues have been resolved. Citizen satisfaction score is currently operating at optimal levels.</p>
           )}
+        </div>
+
+        <div className="bg-violet-50/40 rounded-xl px-4 py-2.5 border border-violet-100/50 text-xs text-slate-600 max-w-xs">
+          <span className="font-bold text-violet-800 flex items-center gap-1.5 mb-0.5">
+            <Sparkles size={13} className="text-violet-500 animate-pulse" />
+            Live Civic Insight
+          </span>
+          <p>
+            {needsAttentionIssues.length > 0 
+              ? `Solving these ${needsAttentionIssues.length} critical attention reports today improves your ward resolution score by 12%.`
+              : "No pending critical issues. Resolving normal queue tasks keeps the ward score at 92%."}
+          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -161,7 +174,7 @@ export default function AuthorityDashboard() {
       </div>
 
       {/* APPLE-STYLE PERSPECTIVE TABS */}
-      <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/50 pb-2">
         <div className="flex rounded-xl bg-slate-100/80 p-1 border border-slate-200/20 max-w-xs w-full">
           <button
             onClick={() => setActiveTab("action")}
@@ -184,7 +197,7 @@ export default function AuthorityDashboard() {
             Bureau Analytics
           </button>
         </div>
-        <span className="text-xs font-bold text-slate-400">
+        <span className="text-xs font-bold text-slate-400 max-sm:pl-1">
           {reports.length} active tickets · Live sync
         </span>
       </div>
@@ -223,17 +236,17 @@ export default function AuthorityDashboard() {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-1.5 self-stretch justify-between shrink-0 md:border-l md:border-slate-200/50 md:pl-4">
-                  <div className="text-right">
+                <div className="flex flex-col items-start md:items-end gap-1.5 self-stretch justify-between shrink-0 md:border-l md:border-slate-200/50 md:pl-4 max-md:mt-2 w-full md:w-auto">
+                  <div className="text-left md:text-right w-full">
                     <StatusBadge status={focusTicket.status} />
-                    <div className="mt-1 flex items-center gap-1.5 justify-end">
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 justify-start md:justify-end">
                       <SlaPill deadline={focusTicket.slaDeadline} />
                       <SeverityDots value={focusTicket.severity} />
                     </div>
                   </div>
                   
                   {/* Inline quick actions for Focus Card */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full max-sm:flex-wrap">
                     <QueueAction
                       report={focusTicket}
                       busy={busy === focusTicket.id}

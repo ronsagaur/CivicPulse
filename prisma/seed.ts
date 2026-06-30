@@ -359,11 +359,18 @@ async function main() {
   await runSeed(prisma);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+const isDirectRun =
+  (typeof require !== "undefined" && require.main === module) ||
+  (process.argv[1] &&
+    (process.argv[1].endsWith("seed.ts") || process.argv[1].endsWith("seed.js") || process.argv[1].includes("prisma/seed")));
+
+if (isDirectRun) {
+  main()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

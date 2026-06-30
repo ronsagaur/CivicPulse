@@ -11,10 +11,11 @@ import {
   TrendingUp as TrendUpIcon,
   ShieldCheck,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Server
 } from "lucide-react";
 import { usePolling } from "@/lib/client";
-import { Stat } from "@/components/ui";
+import { Stat, AnimatedPulseLine } from "@/components/ui";
 import { CATEGORY_META, type IssueCategory } from "@/lib/types";
 import type { AnalyticsSummary, WardStat } from "@/lib/analytics";
 
@@ -76,13 +77,25 @@ export default function PublicLedger() {
           </div>
         </div>
 
-        <div className="bg-slate-50/50 rounded-xl px-4 py-2.5 border border-slate-100/50 text-xs text-slate-600 max-w-xl">
+        <div className="bg-slate-50/50 rounded-xl px-4 py-2.5 border border-slate-100/50 text-xs text-slate-600 max-w-sm">
           <span className="font-bold text-slate-800 flex items-center gap-1.5 mb-0.5">
-            <Sparkles size={13} className="text-brand-600 animate-pulse" />
+            <Server size={13} className="text-emerald-500" />
             Ambient Performance Dispatch
           </span>
           <p>
-            Ward performance improved <strong className="text-emerald-600">+6.4% this week</strong>. The <span className="font-bold text-slate-800">Water Board</span> resolved 95% of issues within scheduled SLA deadlines, leading public repair efficiency.
+            Ward performance improved <strong className="text-emerald-600">+6.4% this week</strong>. The <span className="font-bold text-slate-800">Water Board</span> resolved 95% of issues.
+          </p>
+        </div>
+
+        <div className="bg-violet-50/40 rounded-xl px-4 py-2.5 border border-violet-100/50 text-xs text-slate-600 max-w-xs">
+          <span className="font-bold text-violet-800 flex items-center gap-1.5 mb-0.5">
+            <Sparkles size={13} className="text-violet-500 animate-pulse" />
+            Live Civic Insight
+          </span>
+          <p>
+            {reportedCount > 3
+              ? "Garbage complaints have increased 25% following recent market expansion; resource redirection recommended."
+              : "Municipal ledger trends reflect steady state across all infrastructure sectors."}
           </p>
         </div>
 
@@ -99,7 +112,7 @@ export default function PublicLedger() {
         <div className="flex rounded-xl bg-slate-100/80 p-1 border border-slate-200/20 max-w-md w-full">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`flex-1 rounded-lg py-1.5 text-center text-xs font-bold tracking-wide transition ${
+            className={`flex-1 rounded-lg py-1.5 text-center text-[10px] sm:text-xs font-bold tracking-wide transition ${
               activeTab === "overview"
                 ? "bg-white text-slate-800 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
@@ -109,7 +122,7 @@ export default function PublicLedger() {
           </button>
           <button
             onClick={() => setActiveTab("audits")}
-            className={`flex-1 rounded-lg py-1.5 text-center text-xs font-bold tracking-wide transition ${
+            className={`flex-1 rounded-lg py-1.5 text-center text-[10px] sm:text-xs font-bold tracking-wide transition ${
               activeTab === "audits"
                 ? "bg-white text-slate-800 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
@@ -119,7 +132,7 @@ export default function PublicLedger() {
           </button>
           <button
             onClick={() => setActiveTab("predictive")}
-            className={`flex-1 rounded-lg py-1.5 text-center text-xs font-bold tracking-wide transition ${
+            className={`flex-1 rounded-lg py-1.5 text-center text-[10px] sm:text-xs font-bold tracking-wide transition ${
               activeTab === "predictive"
                 ? "bg-white text-slate-800 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
@@ -157,6 +170,9 @@ export default function PublicLedger() {
             </div>
 
             <div className="text-xs text-slate-500 font-medium">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <AnimatedPulseLine score={computedHealthScore} />
+              </div>
               <span className="text-emerald-600 font-bold flex items-center justify-center gap-1">
                 <TrendingUp size={14} /> +4.2 points this month
               </span>
@@ -172,25 +188,25 @@ export default function PublicLedger() {
               <Stat 
                 label="Issues Reported" 
                 value={reportedCount} 
-                sub={<span className="text-[11px] text-slate-400 font-semibold">Total grievances logged</span>} 
+                sub={<span className="text-[10px] sm:text-[11px] text-slate-400 font-semibold">Total grievances logged</span>} 
               />
               <Stat 
                 label="Resolved & Verified" 
                 value={resolvedCount} 
                 accent="green" 
-                sub={<span className="text-[11px] text-emerald-600 font-bold">📈 +12 solved this week</span>} 
+                sub={<span className="text-[10px] sm:text-[11px] text-emerald-600 font-bold">📈 +12 solved this week</span>} 
               />
               <Stat 
                 label="Active Queue" 
                 value={activeCount} 
                 accent="amber" 
-                sub={<span className="text-[11px] text-amber-600 font-semibold">⏳ SLA countdown active</span>} 
+                sub={<span className="text-[10px] sm:text-[11px] text-amber-600 font-semibold">⏳ SLA countdown active</span>} 
               />
               <Stat 
                 label="Avg Resolution" 
                 value={data?.totals.avgResolutionHours ? `${data.totals.avgResolutionHours}h` : "—"} 
                 accent="blue" 
-                sub={<span className="text-[11px] text-blue-600 font-bold">⚡ Repair rate: 170h → 112h</span>} 
+                sub={<span className="text-[10px] sm:text-[11px] text-blue-600 font-bold">⚡ 170h → 112h</span>} 
               />
             </div>
 

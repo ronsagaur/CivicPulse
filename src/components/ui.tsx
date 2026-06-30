@@ -130,3 +130,26 @@ export function BackLink({ href, label }: { href: string; label: string }) {
     </Link>
   );
 }
+
+export function AnimatedPulseLine({ score = 75 }: { score?: number }) {
+  const speed = score >= 85 ? "1.2s" : score >= 70 ? "1.8s" : score >= 50 ? "2.8s" : "4.2s";
+  const strokeColor = score >= 75 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444";
+  
+  return (
+    <svg className="w-24 h-8 opacity-75 overflow-visible select-none" viewBox="0 0 100 30" aria-hidden="true">
+      <path
+        d="M 0 15 H 20 L 25 5 L 30 25 L 35 12 L 40 18 L 45 15 H 100"
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="animate-pulse"
+        style={{
+          animationDuration: speed,
+          transformOrigin: "center",
+        }}
+      />
+    </svg>
+  );
+}

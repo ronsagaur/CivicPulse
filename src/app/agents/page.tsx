@@ -43,7 +43,127 @@ export default function AgentControlCenter() {
   // Interactive filters
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string | null>(null);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
-  const [tickerMessage, setTickerMessage] = useState("Agent 01 idling... Ready for ingest");
+  const [tickerMessage, setTickerMessage] = useState("Sentinel Agent idling... Ready for ingest");
+
+  const [simulating, setSimulating] = useState(false);
+  const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
+
+  const runSimulation = async (type: "blurry" | "outofbounds" | "duplicate" | "timeout") => {
+    setSimulating(true);
+    setSimulationStatus(`Initializing ${type} simulation...`);
+    try {
+      if (type === "blurry") {
+        setSimulationStatus("Sentinel: Processing night-time imagery with low illumination...");
+        const res = await fetch("/api/reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: 19.1197,
+            lng: 72.8468,
+            description: "Streetlight failing at corner of link road. Photo is extremely dark.",
+            wardId: "ward-14",
+            ai: {
+              is_civic_issue: true,
+              is_private_matter: false,
+              category: "STREETLIGHT",
+              severity: 2,
+              confidence: 0.58,
+              suggested_title: "Flickering Streetlight (Low Confidence)",
+              suggested_description: "Streetlight failing. Visual confidence low due to night imagery.",
+              visual_evidence_quality: "POOR",
+              potential_fraud_signals: ["low_confidence_classification"],
+              estimated_age_of_issue: "RECENT",
+              source: "live"
+            }
+          })
+        });
+        const data = await res.json();
+        setSimulationStatus(`Sentinel flagged report ${data.report?.id || ""} as low-confidence. Handed off to manual audit queue.`);
+      } else if (type === "outofbounds") {
+        setSimulationStatus("Sentinel: Performing boundary verification...");
+        const res = await fetch("/api/reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: 18.0,
+            lng: 72.0,
+            description: "Selfie inside transit carriage.",
+            wardId: "ward-14",
+            ai: {
+              is_civic_issue: false,
+              is_private_matter: false,
+              category: "OTHER",
+              severity: 1,
+              confidence: 0.94,
+              suggested_title: "Rejected: Out-of-bounds Selfie",
+              suggested_description: "Intake rejected. Coordinates are outside municipal boundaries and not civic.",
+              visual_evidence_quality: "UNUSABLE",
+              potential_fraud_signals: ["out_of_bounds_gps"],
+              estimated_age_of_issue: "NEW",
+              source: "live"
+            }
+          })
+        });
+        const data = await res.json();
+        setSimulationStatus(`Sentinel auto-rejected invalid submission. Logged as REJECTED.`);
+      } else if (type === "duplicate") {
+        setSimulationStatus("Sentinel: Querying vicinity coordinates for duplicate overlap...");
+        // Find an active report coordinates to collide with
+        const activeReport = reports.find(r => r.status === "PENDING_VERIFICATION" || r.status === "VERIFIED");
+        const lat = activeReport?.location.lat ?? 19.1197;
+        const lng = activeReport?.location.lng ?? 72.8468;
+        const category = activeReport?.category ?? "POTHOLE";
+        const title = activeReport?.title ?? "Pothole on Link Road";
+        const res = await fetch("/api/reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat,
+            lng,
+            description: `Another duplicate report for category ${category}.`,
+            wardId: "ward-14",
+            ai: {
+              is_civic_issue: true,
+              is_private_matter: false,
+              category,
+              severity: 3,
+              confidence: 0.92,
+              suggested_title: title,
+              suggested_description: "Pothole collision detected.",
+              visual_evidence_quality: "GOOD",
+              potential_fraud_signals: [],
+              estimated_age_of_issue: "RECENT",
+              source: "live"
+            }
+          })
+        });
+        const data = await res.json();
+        if (data.isDuplicate) {
+          setSimulationStatus(`Dispatcher: Detected duplicate report. Auto-merged into ${data.duplicateReportId} and incremented signatures.`);
+        } else {
+          setSimulationStatus(`Dispatcher: Submitted new report ${data.report?.id}. No duplicate collision within 200m.`);
+        }
+      } else if (type === "timeout") {
+        setSimulationStatus("Coordinator: Auditing active SLA timelines...");
+        const activeReport = reports.find(r => r.status === "ROUTED" || r.status === "ACKNOWLEDGED" || r.status === "IN_PROGRESS");
+        if (!activeReport) {
+          setSimulationStatus("Coordinator: No active routed reports found to trigger SLA breach.");
+          setSimulating(false);
+          return;
+        }
+        setSimulationStatus(`Coordinator: Faking deadline timeout for ${activeReport.id}...`);
+        await fetch(`/api/reports/${activeReport.id}/simulate-breach`, { method: "POST" });
+        setSimulationStatus(`Coordinator: SLA breach triggered! Report ${activeReport.id} escalated to District Commissioner.`);
+      }
+      refresh();
+    } catch (err) {
+      console.error(err);
+      setSimulationStatus("Simulation execution error.");
+    } finally {
+      setSimulating(false);
+      setTimeout(() => setSimulationStatus(null), 8000);
+    }
+  };
 
   const runWatchdog = async () => {
     setBusy(true);
@@ -69,12 +189,12 @@ export default function AgentControlCenter() {
   // Simulating the pulsing Agent Ticker messages
   useEffect(() => {
     const messages = [
-      "Agent 01 (Intake) scanning metadata for incoming visual uploads...",
-      "Agent 02 (Routing) recalculating SLA deadlines for active PWD issues...",
-      "Agent 03 (Audit) reviewing department queue latency for Ward 14...",
-      "Agent 01 (Intake) executing visual model duplicate check in area...",
-      "Agent 02 (Routing) evaluating consensus threshold for newly verified pothole...",
-      "Agent 03 (Audit) auditing resource parity indexes across Andheri West..."
+      "Sentinel Agent scanning metadata for incoming visual uploads...",
+      "Dispatcher Agent recalculating SLA deadlines for active PWD issues...",
+      "Auditor Agent reviewing department queue latency for Ward 14...",
+      "Sentinel Agent executing visual model duplicate check in area...",
+      "Dispatcher Agent evaluating consensus threshold for newly verified pothole...",
+      "Coordinator Agent auditing resource parity indexes across Andheri West..."
     ];
     let idx = 0;
     const interval = setInterval(() => {
@@ -116,16 +236,16 @@ export default function AgentControlCenter() {
   const filteredLogs = agentLogs.filter((log) => {
     if (!selectedAgentFilter) return true;
     if (selectedAgentFilter === "intake") {
-      return log.type === "REPORTED" || log.label.includes("Intake") || log.label.includes("classified");
+      return log.type === "REPORTED" || log.label.includes("Intake") || log.label.includes("classified") || log.label.toLowerCase().includes("sentinel");
     }
     if (selectedAgentFilter === "verification") {
-      return log.type === "VERIFIED" || log.label.includes("consensus") || log.label.includes("merge");
+      return log.type === "VERIFIED" || log.label.includes("consensus") || log.label.includes("merge") || log.label.toLowerCase().includes("auditor");
     }
     if (selectedAgentFilter === "routing") {
-      return log.type === "ROUTED" || log.label.includes("routed") || log.label.includes("Routing");
+      return log.type === "ROUTED" || log.label.includes("routed") || log.label.includes("Routing") || log.label.toLowerCase().includes("dispatcher");
     }
     if (selectedAgentFilter === "audit") {
-      return log.type === "ESCALATED" || log.label.includes("escalat") || log.label.includes("Watchdog");
+      return log.type === "ESCALATED" || log.label.includes("escalat") || log.label.includes("Watchdog") || log.label.toLowerCase().includes("coordinator");
     }
     return true;
   });
@@ -165,17 +285,29 @@ export default function AgentControlCenter() {
           </div>
         </div>
 
-        <div className="bg-slate-50/50 rounded-xl px-4 py-2.5 border border-slate-100/50 text-xs text-slate-600 max-w-xl">
+        <div className="bg-slate-50/50 rounded-xl px-4 py-2.5 border border-slate-100/50 text-xs text-slate-600 max-w-sm">
           <span className="font-bold text-slate-800 flex items-center gap-1.5 mb-0.5">
             <Server size={13} className="text-emerald-500" />
             Agent Engine Health
           </span>
           <p>
-            AI handled <strong className="text-brand-700">91.6% of issues autonomously</strong> today. <strong>{escalatedReports} tickets</strong> escalated to Commissioner level due to department SLA breach detections.
+            AI handled <strong className="text-brand-700">91.6% of issues autonomously</strong> today. <strong>{escalatedReports} tickets</strong> escalated to District Commissioner level.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="bg-violet-50/40 rounded-xl px-4 py-2.5 border border-violet-100/50 text-xs text-slate-600 max-w-xs">
+          <span className="font-bold text-violet-800 flex items-center gap-1.5 mb-0.5">
+            <Zap size={13} className="text-violet-500 animate-pulse" />
+            Live Civic Insight
+          </span>
+          <p>
+            {reports.some((r) => r.aiConfidence && r.aiConfidence < 0.75)
+              ? "Sentinel: Intake confidence decreased due to nighttime/blurry imagery. Handing off to manual confirmation."
+              : "All model confidence scores operating above 88% threshold."}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
           {watchdogResult && (
             <span className="text-[11px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl animate-fade-in font-bold">
               Watchdog analyzed {watchdogResult.processed} issues, escalated {watchdogResult.escalated} breach!
@@ -219,7 +351,7 @@ export default function AgentControlCenter() {
           
           <TopologyNode
             id="intake"
-            title="Vision & Intake"
+            title="Sentinel (Intake)"
             emoji="📷"
             status="Online"
             active={selectedAgentFilter === "intake"}
@@ -228,7 +360,7 @@ export default function AgentControlCenter() {
           
           <TopologyNode
             id="verification"
-            title="Consensus Auditor"
+            title="Auditor (Consensus)"
             emoji="🤝"
             status="Vigilant"
             active={selectedAgentFilter === "verification"}
@@ -237,7 +369,7 @@ export default function AgentControlCenter() {
           
           <TopologyNode
             id="routing"
-            title="Routing Dispatcher"
+            title="Dispatcher (Routing)"
             emoji="⚡"
             status="Monitoring"
             active={selectedAgentFilter === "routing"}
@@ -246,7 +378,7 @@ export default function AgentControlCenter() {
 
           <TopologyNode
             id="audit"
-            title="SLA Watchdog"
+            title="Coordinator (Watchdog)"
             emoji="🛡️"
             status="Vigilant"
             active={selectedAgentFilter === "audit"}
@@ -257,15 +389,15 @@ export default function AgentControlCenter() {
       </div>
 
       {/* AGENT MEMORY AND ACCURACY CARDS */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         
         {/* Memory Card 1 */}
         <div className="card p-4 bg-gradient-to-br from-white to-brand-50/[0.08] border-brand-100/50">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Agent Memory #01</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Sentinel Agent</span>
             <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-100 text-[9px] font-bold">Accuracy: 98.4%</span>
           </div>
-          <h3 className="text-sm font-extrabold text-slate-700 mt-2">Intake Classifier</h3>
+          <h3 className="text-sm font-extrabold text-slate-700 mt-2">Vision Intake Core</h3>
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
             <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
               <span className="text-slate-400 block font-semibold text-[10px]">Processed Today</span>
@@ -273,7 +405,7 @@ export default function AgentControlCenter() {
             </div>
             <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
               <span className="text-slate-400 block font-semibold text-[10px]">Avg Latency</span>
-              <strong className="text-slate-800 text-sm">1.6 seconds</strong>
+              <strong className="text-slate-800 text-sm">1.6s</strong>
             </div>
           </div>
         </div>
@@ -281,41 +413,154 @@ export default function AgentControlCenter() {
         {/* Memory Card 2 */}
         <div className="card p-4 bg-gradient-to-br from-white to-amber-50/[0.08] border-amber-100/50">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Agent Memory #02</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Dispatcher Agent</span>
             <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-100 text-[9px] font-bold">Confidence: 96.1%</span>
           </div>
-          <h3 className="text-sm font-extrabold text-slate-700 mt-2">Routing Specialist</h3>
+          <h3 className="text-sm font-extrabold text-slate-700 mt-2">Routing Dispatcher</h3>
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
             <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
               <span className="text-slate-400 block font-semibold text-[10px]">Active Queues</span>
               <strong className="text-slate-800 text-sm">4 departments</strong>
             </div>
             <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-              <span className="text-slate-400 block font-semibold text-[10px]">Audit Latency</span>
-              <strong className="text-slate-800 text-sm">0.8 seconds</strong>
+              <span className="text-slate-400 block font-semibold text-[10px]">Routing Speed</span>
+              <strong className="text-slate-800 text-sm">0.8s</strong>
             </div>
           </div>
         </div>
 
         {/* Memory Card 3 */}
+        <div className="card p-4 bg-gradient-to-br from-white to-emerald-50/[0.08] border-emerald-100/50">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Auditor Agent</span>
+            <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-100 text-[9px] font-bold">Consensus: 99.1%</span>
+          </div>
+          <h3 className="text-sm font-extrabold text-slate-700 mt-2">Consensus Auditor</h3>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+              <span className="text-slate-400 block font-semibold text-[10px]">Voted Consensus</span>
+              <strong className="text-slate-800 text-sm">412 verification</strong>
+            </div>
+            <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+              <span className="text-slate-400 block font-semibold text-[10px]">Spam Filtered</span>
+              <strong className="text-slate-800 text-sm">8 cases</strong>
+            </div>
+          </div>
+        </div>
+
+        {/* Memory Card 4 */}
         <div className="card p-4 bg-gradient-to-br from-white to-rose-50/[0.08] border-rose-100/50">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Agent Memory #03</span>
-            <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-100 text-[9px] font-bold">Resolved Rate: 91.2%</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Coordinator Agent</span>
+            <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-100 text-[9px] font-bold">Escalated: 100%</span>
           </div>
-          <h3 className="text-sm font-extrabold text-slate-700 mt-2">SLA Escalation Watchdog</h3>
+          <h3 className="text-sm font-extrabold text-slate-700 mt-2">SLA Watchdog Core</h3>
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
             <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
               <span className="text-slate-400 block font-semibold text-[10px]">Escalated Today</span>
               <strong className="text-slate-800 text-sm">{escalatedReports} tickets</strong>
             </div>
             <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-              <span className="text-slate-400 block font-semibold text-[10px]">Check Loop</span>
-              <strong className="text-slate-800 text-sm">Every 5 mins</strong>
+              <span className="text-slate-400 block font-semibold text-[10px]">Audited Timers</span>
+              <strong className="text-slate-800 text-sm">Active</strong>
             </div>
           </div>
         </div>
 
+      </div>
+
+      {/* STRESS-TESTING CONSOLE */}
+      <div className="card p-5 bg-gradient-to-br from-slate-50 via-white to-orange-50/5 border-orange-100">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5 font-serif-header">
+              <Zap size={16} className="text-brand-500 animate-pulse" /> AI Stress-Testing & Resilience Console
+            </h2>
+            <p className="text-xs text-slate-400 font-semibold mt-0.5">
+              Simulate edge cases to test AI classifier confidence thresholds, boundary rejections, duplicate detection, and auto-escalations.
+            </p>
+          </div>
+          <span className="chip bg-orange-50 text-orange-700 ring-orange-200 text-[10px] font-bold">Resilience Mode</span>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+          
+          <div className="border border-slate-100 bg-white p-3 rounded-xl shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="text-[10px] font-extrabold text-brand-600 uppercase">Sentinel (Intake)</div>
+              <h4 className="text-xs font-bold text-slate-800 mt-1">Night / Blurry Image</h4>
+              <p className="text-[10px] text-slate-400 mt-1 leading-normal">
+                Submit a nighttime photo with low lighting. Confidence drops to 58%, halting auto-routing for manual confirmation.
+              </p>
+            </div>
+            <button
+              onClick={() => runSimulation("blurry")}
+              disabled={simulating}
+              className="mt-3 btn-ghost !py-1.5 text-[10px] font-bold w-full justify-center"
+            >
+              Simulate
+            </button>
+          </div>
+
+          <div className="border border-slate-100 bg-white p-3 rounded-xl shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="text-[10px] font-extrabold text-rose-600 uppercase">Sentinel (Rejection)</div>
+              <h4 className="text-xs font-bold text-slate-800 mt-1">Non-Civic / GPS Mismatch</h4>
+              <p className="text-[10px] text-slate-400 mt-1 leading-normal">
+                Upload a private selfie or out-of-bounds coordinates. Sentinel rejects the issue as non-civic, preventing queue entry.
+              </p>
+            </div>
+            <button
+              onClick={() => runSimulation("outofbounds")}
+              disabled={simulating}
+              className="mt-3 btn-ghost !py-1.5 text-[10px] font-bold w-full justify-center"
+            >
+              Simulate
+            </button>
+          </div>
+
+          <div className="border border-slate-100 bg-white p-3 rounded-xl shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="text-[10px] font-extrabold text-amber-600 uppercase">Dispatcher (Collision)</div>
+              <h4 className="text-xs font-bold text-slate-800 mt-1">Duplicate Upload</h4>
+              <p className="text-[10px] text-slate-400 mt-1 leading-normal">
+                Report a duplicate pothole at the same coordinates. Dispatcher auto-merges it and increments signatures.
+              </p>
+            </div>
+            <button
+              onClick={() => runSimulation("duplicate")}
+              disabled={simulating}
+              className="mt-3 btn-ghost !py-1.5 text-[10px] font-bold w-full justify-center"
+            >
+              Simulate
+            </button>
+          </div>
+
+          <div className="border border-slate-100 bg-white p-3 rounded-xl shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="text-[10px] font-extrabold text-violet-600 uppercase">Coordinator (Timeout)</div>
+              <h4 className="text-xs font-bold text-slate-800 mt-1">SLA Breach Timeout</h4>
+              <p className="text-[10px] text-slate-400 mt-1 leading-normal">
+                Fast-forward an active ticket's timer. Coordinator detects the breach and auto-escalates to Commissioner.
+              </p>
+            </div>
+            <button
+              onClick={() => runSimulation("timeout")}
+              disabled={simulating}
+              className="mt-3 btn-ghost !py-1.5 text-[10px] font-bold w-full justify-center"
+            >
+              Simulate
+            </button>
+          </div>
+
+        </div>
+
+        {simulationStatus && (
+          <div className="mt-3 rounded-xl bg-slate-50 border border-slate-200/50 p-2.5 text-xs text-slate-600 flex items-center gap-2 animate-fade-in">
+            <span className="h-2 w-2 rounded-full bg-brand-500 animate-ping shrink-0" />
+            <span className="font-semibold">{simulationStatus}</span>
+          </div>
+        )}
       </div>
 
       {/* ACTIVITY FEED WITH FILTERING, CONFIDENCE & EXPLAINABILITY DRAWER */}

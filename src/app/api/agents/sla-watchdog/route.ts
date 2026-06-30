@@ -30,7 +30,7 @@ export async function POST() {
 
       if (toolCall.name === "escalateTicket") {
         const escalationReason = String(
-          toolCall.args.reason || `SLA breach escalation by AI Watchdog Agent: ${reason}`
+          toolCall.args.reason || `SLA breach escalation by AI Coordinator Agent: ${reason}`
         );
 
         // Execute the autonomous escalation

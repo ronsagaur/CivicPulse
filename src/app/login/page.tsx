@@ -136,7 +136,7 @@ export default function LoginPage() {
             CivicPulse
           </h1>
           <p className="text-sm text-slate-500 mt-2">
-            Report. Verify. Route. Resolve. Re-verify.
+            Making civic governance visible.
           </p>
         </div>
 

@@ -377,7 +377,7 @@ export async function applyClassification(
     id,
     "AI_CLASSIFIED",
     "SYSTEM",
-    `AI verified — ${ai.category.replace(/_/g, " ").toLowerCase()}, severity ${ai.severity} (${Math.round(
+    `Sentinel Agent verified — ${ai.category.replace(/_/g, " ").toLowerCase()}, severity ${ai.severity} (${Math.round(
       ai.confidence * 100
     )}%)${ai.source === "mock" ? " · system classifier" : " · live"}`
   );
@@ -404,7 +404,7 @@ async function routeReport(id: string) {
   const toolCall = await chooseRoutingToolCall(report, wardDepts);
 
   if (toolCall.name !== "routeToDepartment") {
-    await addEvent(id, "ROUTING_SKIPPED", "SYSTEM", "Agent did not return a routing tool call");
+    await addEvent(id, "ROUTING_SKIPPED", "SYSTEM", "Dispatcher Agent did not return a routing tool call");
     return;
   }
 
@@ -447,14 +447,14 @@ export async function routeToDepartment(
       reportId,
       "ROUTED",
       "SYSTEM",
-      `Agent routed to ${dept.shortName} · urgency ${normalizedUrgency}/5 · SLA ${slaHours}h${reason ? ` · ${reason}` : ""}`
+      `Dispatcher Agent routed to ${dept.shortName} · urgency ${normalizedUrgency}/5 · SLA ${slaHours}h${reason ? ` · ${reason}` : ""}`
     );
   } else {
     await prisma.report.update({
       where: { id: reportId },
       data: { status: "ROUTED" },
     });
-    await addEvent(reportId, "ROUTED", "SYSTEM", "Agent queued this for manual routing");
+    await addEvent(reportId, "ROUTED", "SYSTEM", "Dispatcher Agent queued this for manual routing");
   }
 
   return (await getReport(reportId))!;

@@ -51,6 +51,23 @@ export default function ReportDetail() {
   );
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackIndex, setPlaybackIndex] = useState(-1);
+
+  useEffect(() => {
+    if (!isPlaying || !data?.report) return;
+    const reportEvents = data.report.events;
+    const interval = setInterval(() => {
+      setPlaybackIndex((prev) => {
+        if (prev >= reportEvents.length - 1) {
+          setIsPlaying(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [isPlaying, data?.report]);
 
   if (!data?.report) {
     return (
@@ -235,45 +252,104 @@ export default function ReportDetail() {
       {r.upvoteCount >= 5 && <PetitionCard report={r} />}
 
       {/* The Visual Journey Timeline */}
-      <div className="card p-6 bg-gradient-to-b from-white to-slate-50">
-        <h2 className="mb-6 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 text-center">
-          Resolution Journey
-        </h2>
+      <div className="card p-6 bg-gradient-to-b from-white to-slate-50 relative">
+        <div className="flex flex-col sm:flex-row items-center justify-between border-b border-slate-100 pb-3 mb-6 gap-3">
+          <h2 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            Resolution Journey
+          </h2>
+          
+          {/* Replay Mode Controls */}
+          <div className="flex items-center gap-2">
+            {playbackIndex >= 0 ? (
+              <>
+                <span className="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+                  Step {playbackIndex + 1} of {r.events.length}
+                </span>
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="btn-primary !px-2.5 !py-1 text-[11px] font-bold shadow-sm"
+                >
+                  {isPlaying ? "⏸ Pause" : "▶ Play"}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setPlaybackIndex(-1);
+                  }}
+                  className="btn-ghost !px-2.5 !py-1 text-[11px] font-bold"
+                >
+                  🔄 Reset
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => {
+                  setPlaybackIndex(0);
+                  setIsPlaying(true);
+                }}
+                className="btn-primary !px-3 !py-1.5 text-xs font-bold shadow-md flex items-center gap-1 bg-violet-600 hover:bg-violet-700"
+              >
+                🎬 Replay Journey
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="relative border-l-2 border-dashed border-slate-200 ml-6 space-y-8 pb-4">
-          {r.events
-            .slice()
-            .reverse()
-            .map((e, index) => {
+          {(() => {
+            const list = playbackIndex >= 0 
+              ? r.events.slice(0, playbackIndex + 1).reverse()
+              : r.events.slice().reverse();
+
+            if (list.length === 0) {
+              return (
+                <div className="pl-8 py-4 text-xs text-slate-400 italic">
+                  Journey starts... click Play to begin.
+                </div>
+              );
+            }
+
+            return list.map((e, index) => {
               const isFirst = index === 0;
               let icon = "📸";
               let color = "bg-slate-100 text-slate-600";
               let ring = "ring-slate-200";
 
-              if (e.label.includes("Created")) {
+              if (e.label.toLowerCase().includes("reported")) {
                 icon = "📸"; color = "bg-sky-100 text-sky-700"; ring = "ring-sky-200";
-              } else if (e.label.includes("verified")) {
+              } else if (e.label.toLowerCase().includes("verified") || e.label.toLowerCase().includes("classified")) {
                 icon = "🤖"; color = "bg-indigo-100 text-indigo-700"; ring = "ring-indigo-200";
-              } else if (e.label.includes("confirm")) {
+              } else if (e.label.toLowerCase().includes("confirm")) {
                 icon = "👥"; color = "bg-emerald-100 text-emerald-700"; ring = "ring-emerald-200";
-              } else if (e.label.includes("routed")) {
+              } else if (e.label.toLowerCase().includes("routed")) {
                 icon = "🏛"; color = "bg-amber-100 text-amber-700"; ring = "ring-amber-200";
-              } else if (e.label.includes("started")) {
+              } else if (e.label.toLowerCase().includes("started")) {
                 icon = "🛠"; color = "bg-orange-100 text-orange-700"; ring = "ring-orange-200";
-              } else if (e.label.includes("Resolved")) {
-                icon = "✅"; color = "bg-neem/20 text-neem"; ring = "ring-neem/40";
-              } else if (e.label.includes("escalated")) {
+              } else if (e.label.toLowerCase().includes("resolved")) {
+                icon = "✅"; color = "bg-emerald-100 text-emerald-700"; ring = "ring-emerald-200";
+              } else if (e.label.toLowerCase().includes("escalated")) {
                 icon = "🚨"; color = "bg-rose-100 text-rose-700"; ring = "ring-rose-200";
               }
 
+              const isHighlight = playbackIndex >= 0 && isFirst;
+
               return (
-                <div key={e.id} className={`relative flex items-start gap-4 transition-all duration-500 ${isFirst ? 'scale-100 opacity-100' : 'scale-95 opacity-70 hover:scale-100 hover:opacity-100'}`}>
+                <div key={e.id} className={`relative flex items-start gap-4 transition-all duration-500 ${
+                  isHighlight ? 'scale-102 opacity-100 animate-slide-down' : 'scale-95 opacity-70 hover:scale-100 hover:opacity-100'
+                }`}>
                   {/* Icon Node */}
-                  <div className={`absolute -left-[27px] w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg ring-4 ring-white ${color}`}>
+                  <div className={`absolute -left-[27px] w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg ring-4 ring-white transition ${color} ${
+                    isHighlight ? 'ring-violet-200 scale-110' : ''
+                  }`}>
                     {icon}
                   </div>
                   
                   {/* Event Card */}
-                  <div className={`ml-8 flex-1 rounded-2xl p-4 shadow-sm border bg-white ${isFirst ? 'border-slate-200 shadow-md' : 'border-slate-100'}`}>
+                  <div className={`ml-8 flex-1 rounded-2xl p-4 shadow-sm border bg-white transition duration-300 ${
+                    isHighlight 
+                      ? 'border-violet-500 ring-2 ring-violet-100 shadow-md' 
+                      : 'border-slate-100'
+                  }`}>
                     {(() => {
                       const parts = e.label.split(" · ");
                       const mainLabel = parts[0];
@@ -297,7 +373,8 @@ export default function ReportDetail() {
                   </div>
                 </div>
               );
-            })}
+            });
+          })()}
         </div>
       </div>
 
